@@ -1,0 +1,813 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  email              String             @unique
+  surname            String?
+  firstname          String?
+  avatar             String?
+  signature          String?
+  password           String
+  role               String             @default("Student")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  phoneNumber        String?
+
+  programs           Program[]
+  
+  // Banking Details
+  bankName           String?
+  accountNumber      String?
+  accountName        String?
+
+  @@map("users")
+}
+
+model Lecturer {
+  id              String    @id @default(cuid())
+  
+  // Auth Fields
+  email           String    @unique
+  password        String
+  firstname       String?
+  surname         String?
+  avatar          String?
+  phoneNumber     String?
+  role            String    @default("Lecturer") // Always "Lecturer"
+  
+  // Professional Details
+  staffId         String?   @unique
+  title           String?   // Dr., Prof., etc.
+  department      String?
+  faculty         String?
+  qualification   String?
+  specialization  String?
+  bio             String?   @db.Text
+  
+  employmentType  String?   // Full-time, Adjunct, Visiting
+  status          String    @default("ACTIVE") // ACTIVE, ON_LEAVE, Sabbatical
+  
+  appointmentDate DateTime?
+  
+  // Banking Details
+  bankName        String?
+  accountNumber   String?
+  accountName     String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  coursesTaught      Course[]           @relation("CourseLecturers")
+  supervisedStudents StudentProgramme[] @relation("StudentSupervisor")
+  examinedTheses1    StudentProgramme[] @relation("InternalExaminer1")
+  examinedTheses2    StudentProgramme[] @relation("InternalExaminer2")
+  externalTheses     StudentProgramme[] @relation("ExternalExaminer")
+  payments           LecturerPayment[]
+  submittedResults   ResultSubmission[]
+
+  @@map("lecturers")
+}
+
+model Application {
+  id                         String            @id @default(cuid())
+  email                      String
+  firstname                  String
+  surname                    String
+  middlename                 String?
+  maidenName                 String?
+  nationalId                 String
+  nationalIdFile             String?
+  maritalStatus              String
+  dateOfBirth                String
+  gender                     String
+  nationality                String
+  phoneNumber                String
+  alternatePhone             String?
+  address                    String
+  homeAddress                String
+  homeTown                   String
+  city                       String
+  state                      String
+  country                    String
+  postalCode                 String?
+  religion                   String
+  avatar                     String?
+  kinFirstname               String
+  kinSurname                 String
+  kinRelationship            String
+  kinPhone                   String
+  kinEmail                   String
+  kinAddress                 String
+  programType                String
+  programChoice              String
+  admissionSession           String
+  modeOfStudy                String
+  previousDegree             String
+  previousInstitution        String
+  previousGraduationYear     String
+  previousGPA                String
+  previousFieldOfStudy       String
+  transcriptFile             String?
+  certificateFile            String?
+  employmentStatus           String
+  currentEmployer            String?
+  jobTitle                   String?
+  employmentStartDate        String?
+  employmentEndDate          String?
+  reasonForPursuing          String
+  researchTitle              String?
+  researchAbstract           String?
+  researchObjectives         String?
+  researchMethodology        String?
+  proposalFile               String?
+  referee1Name               String
+  referee1Email              String
+  referee1Phone              String
+  referee1Institution        String
+  referee2Name               String
+  referee2Email              String
+  referee2Phone              String
+  referee2Institution        String
+  paymentMethod              String
+  paymentReference           String
+  paymentProof               String?
+  status                     ApplicationStatus @default(PENDING)
+  applicationNumber          String?           @unique
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
+  acceptanceFeePaid          Boolean           @default(false)
+  acceptancePaidAt           DateTime?
+  acceptancePaymentReference String?           @unique
+  student                    Student?
+
+  @@map("applications")
+}
+
+model Service {
+  id           String    @id @default(cuid())
+  title        String
+  slug         String    @unique
+  subtitle     String?
+  description  String
+  icon         String?
+  color        String?
+  totalCourses Int       @default(0)
+  displayOrder Int       @default(0)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  programs     Program[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("services")
+}
+
+model Program {
+  id                String             @id @default(cuid())
+  title             String
+  courseCode        String?            @unique
+  slug              String             @unique
+  level             CourseLevel
+  duration          String?
+  studyMode         String?
+  fee               String?
+  brochure          String?
+  overview          String
+  objectives        Json?
+  curriculum        Json?
+  requirements      Json?
+  careerPaths       Json?
+  isActive          Boolean            @default(true)
+  displayOrder      Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  serviceId         String?
+  headOfProgramId   String?
+  courses           Course[]
+  headOfProgram     User?              @relation(fields: [headOfProgramId], references: [id])
+  service           Service?           @relation(fields: [serviceId], references: [id])
+  studentProgrammes StudentProgramme[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@index([displayOrder])
+  @@index([serviceId])
+  @@index([headOfProgramId])
+  @@map("programs")
+}
+
+model Course {
+  id            String                      @id @default(cuid())
+  title         String
+  slug          String                      @unique
+  overview      String
+  isActive      Boolean                     @default(true)
+  displayOrder  Int                         @default(0)
+  createdAt     DateTime                    @default(now())
+  updatedAt     DateTime                    @updatedAt
+  programId     String
+  program       Program                     @relation(fields: [programId], references: [id], onDelete: Cascade)
+  subscriptions CourseSubscription[]
+  registrations StudentCourseRegistration[]
+  payments      LecturerPayment[]
+  submissions   ResultSubmission[]
+
+  courseCode  String?
+  courseType  String?
+  programType String?
+  semester    String?
+  creditHours Int?
+  lecturers   Lecturer[]  @relation("CourseLecturers")
+  materials   CourseMaterial[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@index([displayOrder])
+  @@index([programId])
+  @@map("courses")
+}
+
+model CourseMaterial {
+  id          String       @id @default(cuid())
+  courseId    String
+  title       String
+  type        MaterialType
+  fileUrl     String
+  uploadedAt  DateTime     @default(now())
+  
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  @@index([courseId])
+  @@map("course_materials")
+}
+
+enum MaterialType {
+    NOTE
+    SLIDE
+    ASSIGNMENT
+}
+
+model CourseSubscription {
+  id                    String             @id @default(cuid())
+  courseSlug            String
+  courseId              String?
+  firstname             String
+  surname               String
+  email                 String
+  phoneNumber           String
+  address               String
+  city                  String
+  state                 String
+  country               String
+  dateOfBirth           String
+  gender                String
+  occupation            String?
+  organization          String?
+  reasonForSubscription String
+  howDidYouHear         String
+  paymentMethod         String
+  paymentReference      String
+  status                SubscriptionStatus @default(PENDING)
+  subscriptionNumber    String?            @unique
+  notes                 String?            @db.Text
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  course                Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([courseSlug])
+  @@index([courseId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([paymentReference])
+  @@map("course_subscriptions")
+}
+
+model News {
+  id          String       @id @default(cuid())
+  title       String
+  slug        String       @unique
+  category    NewsCategory
+  excerpt     String
+  content     String
+  author      String
+  image       String
+  tags        Json?
+  publishedAt DateTime?
+  isPublished Boolean      @default(false)
+  isFeatured  Boolean      @default(false)
+  views       Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([slug])
+  @@index([category])
+  @@index([isPublished])
+  @@index([isFeatured])
+  @@index([publishedAt])
+  @@map("news")
+}
+
+model Team {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  role           TeamRole
+  title          String
+  department     String?
+  email          String
+  phone          String?
+  image          String
+  bio            String
+  qualifications Json
+  researchAreas  Json?
+  linkedin       String?
+  twitter        String?
+  isActive       Boolean  @default(true)
+  displayOrder   Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([slug])
+  @@index([role])
+  @@index([isActive])
+  @@index([displayOrder])
+  @@map("team")
+}
+
+model SkillApplication {
+  id                       String            @id @default(cuid())
+  surname                  String
+  firstname                String
+  email                    String
+  phone                    String
+  dateOfBirth              String
+  gender                   String
+  address                  String
+  technicalInterest        String
+  hasPriorExperience       String
+  priorTechSkills          Json?
+  hasLaptop                String
+  hasReliableInternet      String
+  whyLearnTechSkill        String
+  careerGoalsInTech        String
+  committedToProgram       String
+  howDidYouHear            String
+  disabilitiesOrAssistance String?
+  informationConfirmed     Boolean           @default(false)
+  paymentReference         String?
+  status                   ApplicationStatus @default(PENDING)
+  applicationNumber        String?           @unique
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  avatar                   String?
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@map("skill_applications")
+}
+
+model Student {
+  id                 String                      @id @default(cuid())
+  applicationId      String?                     @unique
+  matricNumber       String?                     @unique
+  registrationNumber String?                     @unique
+  password           String?
+  status             StudentStatus               @default(ACTIVE)
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+  documents          StudentDocument[]
+  education          StudentEducationHistory[]
+  employment         StudentEmploymentHistory[]
+  medical            StudentMedicalHistory?
+  nextOfKin          StudentNextOfKin[]
+  personalInfo       StudentPersonalInfo?
+  programmes         StudentProgramme[]
+  sponsors           StudentSponsor[]
+  application        Application?                @relation(fields: [applicationId], references: [id])
+  registrations      StudentCourseRegistration[]
+
+  @@map("students")
+}
+
+model StudentPersonalInfo {
+  id             String   @id @default(cuid())
+  studentId      String   @unique
+  email          String
+  firstname      String
+  surname        String
+  middlename     String?
+  maidenName     String?
+  nationalId     String?
+  nationalIdFile String?
+  maritalStatus  String?
+  dateOfBirth    String
+  gender         String
+  nationality    String
+  phoneNumber    String
+  alternatePhone String?
+  address        String
+  homeAddress    String
+  homeTown       String
+  city           String
+  state          String
+  country        String
+  postalCode     String?
+  religion       String
+  avatar         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  student        Student  @relation(fields: [studentId], references: [id])
+
+  @@map("student_personal_info")
+}
+
+model StudentSponsor {
+  id           String   @id @default(cuid())
+  studentId    String
+  name         String
+  relationship String?
+  phone        String
+  email        String?
+  address      String?
+  occupation   String?
+  organisation String?
+  sponsorType  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  student      Student  @relation(fields: [studentId], references: [id])
+
+  @@map("student_sponsors")
+}
+
+model StudentNextOfKin {
+  id           String   @id @default(cuid())
+  studentId    String
+  firstname    String
+  surname      String
+  relationship String
+  phone        String
+  email        String
+  address      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  student      Student  @relation(fields: [studentId], references: [id])
+
+  @@map("student_next_of_kin")
+}
+
+model StudentProgramme {
+  id               String                 @id @default(cuid())
+  studentId        String
+  programId        String
+  admissionSession String
+  modeOfStudy      String
+  startDate        DateTime?
+  endDate          DateTime?
+  status           StudentProgrammeStatus @default(ADMITTED)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  program          Program                @relation(fields: [programId], references: [id])
+  student          Student                @relation(fields: [studentId], references: [id])
+  supervisorId        String?
+  supervisor          Lecturer?              @relation("StudentSupervisor", fields: [supervisorId], references: [id])
+  internalExaminer1Id String?
+  internalExaminer1   Lecturer?              @relation("InternalExaminer1", fields: [internalExaminer1Id], references: [id])
+  internalExaminer2Id String?
+  internalExaminer2   Lecturer?              @relation("InternalExaminer2", fields: [internalExaminer2Id], references: [id])
+  externalExaminerId  String?
+  externalExaminer    Lecturer?              @relation("ExternalExaminer", fields: [externalExaminerId], references: [id])
+
+  @@index([studentId])
+  @@index([programId])
+  @@map("student_programmes")
+}
+
+model StudentEducationHistory {
+  id              String   @id @default(cuid())
+  studentId       String
+  institutionName String
+  qualification   String
+  fieldOfStudy    String
+  startYear       String?
+  endYear         String?
+  grade           String?
+  transcriptFile  String?
+  certificateFile String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  student         Student  @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
+  @@map("student_education_history")
+}
+
+model StudentEmploymentHistory {
+  id               String   @id @default(cuid())
+  studentId        String
+  employerName     String
+  jobTitle         String?
+  employmentStatus String
+  startDate        String?
+  endDate          String?
+  reasonForLeaving String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  student          Student  @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
+  @@map("student_employment_history")
+}
+
+model StudentMedicalHistory {
+  id                      String   @id @default(cuid())
+  studentId               String   @unique
+  hasDisability           Boolean  @default(false)
+  disabilityDetails       String?
+  hasChronicIllness       Boolean  @default(false)
+  chronicIllnessDetails   String?
+  allergies               String?
+  bloodGroup              String?
+  genotype                String?
+  emergencyContactName    String?
+  emergencyContactPhone   String?
+  emergencyContactAddress String?
+  healthInsuranceProvider String?
+  healthInsurancePolicyNo String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  student                 Student  @relation(fields: [studentId], references: [id])
+
+  @@map("student_medical_history")
+}
+
+model StudentDocument {
+  id          String              @id @default(cuid())
+  studentId   String
+  type        StudentDocumentType
+  filePath    String
+  description String?
+  uploadedAt  DateTime            @default(now())
+  student     Student             @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
+  @@map("student_documents")
+}
+
+enum ApplicationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  AWAITING_PAYMENT
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  role        String   @unique // Role identifier (e.g., "SUPER_ADMIN", "Center_Leader")
+  displayName String
+  description String   @db.Text
+  permissions Json // Array of sidebar item names (strings)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([role])
+  @@map("roles")
+}
+
+enum CourseLevel {
+  CERTIFICATE
+  DIPLOMA
+  BACHELORS
+  MASTERS
+  PHD
+  MASTERS_AND_PHD
+  PGD
+  MSC
+}
+
+enum NewsCategory {
+  RESEARCH
+  ACHIEVEMENT
+  EVENT
+  ANNOUNCEMENT
+  COLLABORATION
+}
+
+enum TeamRole {
+  LEADERSHIP
+  FACULTY
+  STAFF
+  RESEARCH
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  SUSPENDED
+  WITHDRAWN
+  DEFERRED
+}
+
+enum StudentProgrammeStatus {
+  ADMITTED
+  REGISTERED
+  IN_PROGRESS
+  COMPLETED
+  WITHDRAWN
+  DEFERRED
+}
+
+enum StudentDocumentType {
+  ADMISSION_LETTER
+  PASSPORT_PHOTO
+  NATIONAL_ID
+  TRANSCRIPT
+  CERTIFICATE
+  MEDICAL_REPORT
+  OTHER
+}
+
+enum SubscriptionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+model YouTubeVideo {
+  id           String               @id @default(cuid())
+  title        String
+  description  String?              @db.Text
+  videoId      String
+  category     YouTubeVideoCategory
+  isPublished  Boolean              @default(false)
+  isFeatured   Boolean              @default(false)
+  displayOrder Int                  @default(0)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([category])
+  @@index([isPublished])
+  @@index([isFeatured])
+  @@index([displayOrder])
+  @@index([createdAt])
+  @@map("youtube_videos")
+}
+
+enum YouTubeVideoCategory {
+  WELCOME
+  RESEARCH
+  ACHIEVEMENT
+  EVENT
+  ANNOUNCEMENT
+  STUDENT_STORIES
+  TUTORIAL
+}
+
+model AdmissionExercise {
+  id                String   @id @default(cuid())
+  academicYear      String // e.g., "2021/2022" or "2023/2024"
+  applicationNumber String // Replaces S/N
+  name              String // Applicant Name
+  gender            String // "M" or "F"
+  program           String // Program code/abbreviation (e.g., "RNES")
+  level             String // Degree level (e.g., "MSc", "PhD", "PGD")
+  testScore         Int      @default(0)
+  comportment       Int      @default(0)
+  answer            Int      @default(0)
+  proposal          Int      @default(0)
+  total             Int // Calculated sum: testScore + comportment + answer + proposal
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("admission_exercises")
+}
+
+model StudentCourseRegistration {
+  id        String  @id @default(cuid())
+  studentId String
+  courseId  String
+  session   String
+  semester  String
+  status    String  @default("REGISTERED")
+  grade     String?
+  score     Int?
+
+  course  Course  @relation(fields: [courseId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, courseId, session])
+  @@index([studentId])
+  @@index([courseId])
+  @@map("student_course_registrations")
+}
+
+model LecturerPayment {
+  id          String        @id @default(cuid())
+  lecturerId  String
+  courseId    String?
+  amount      Float
+  currency    String        @default("NGN")
+  status      PaymentStatus @default(PENDING)
+  generatedAt DateTime      @default(now())
+  paidAt      DateTime?
+  reference   String?
+
+  lecturer Lecturer    @relation(fields: [lecturerId], references: [id])
+  course   Course? @relation(fields: [courseId], references: [id])
+
+  @@index([lecturerId])
+  @@index([courseId])
+  @@index([status])
+  @@map("lecturer_payments")
+}
+
+model ResultSubmission {
+  id          String           @id @default(cuid())
+  courseId    String
+  lecturerId  String
+  session     String
+  semester    String
+  submittedAt DateTime         @default(now())
+  status      SubmissionStatus @default(SUBMITTED)
+  fileUrl     String?
+
+  course   Course @relation(fields: [courseId], references: [id])
+  lecturer Lecturer   @relation(fields: [lecturerId], references: [id])
+
+  @@unique([courseId, session, semester])
+  @@index([lecturerId])
+  @@index([courseId])
+  @@map("result_submissions")
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  VERIFIED
+  APPROVED
+  REJECTED
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  lead        String
+  dueDate     DateTime
+  images      String[]
+  video       String?
+  accessCode  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("projects")
+}
+
+model ProjectAccessCode {
+  id         String   @id @default(cuid()) 
+  accessTo   String[] // Array of project IDs or resources this code grants access to
+  code       String   @unique
+  isActive   Boolean  @default(true)
+  maxUses    Int?     // null = unlimited
+  usageCount Int      @default(0)
+  createdBy  String?  // User who created this code
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([code])
+  @@index([isActive])
+  @@map("project_access_codes")
+}
+
