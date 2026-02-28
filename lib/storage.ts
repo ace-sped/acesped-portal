@@ -37,10 +37,17 @@ export async function uploadFile(
         const isVideo = file.type.startsWith('video/');
         const result = await uploadToCloudinary(buffer, folder, isVideo ? 'video' : 'auto');
         if (result && result.secure_url) {
+            let finalPath = result.secure_url;
+
+            // Auto-inject optimization parameters for Cloudinary deliveries
+            if (finalPath.includes('res.cloudinary.com') && !finalPath.includes('/raw/upload/')) {
+                finalPath = finalPath.replace('/upload/', '/upload/f_auto,q_auto/');
+            }
+
             return {
                 success: true,
-                path: result.secure_url,
-                message: 'Uploaded to Cloudinary',
+                path: finalPath,
+                message: 'Uploaded and optimized on Cloudinary',
             };
         }
     } catch (error) {
@@ -129,10 +136,17 @@ export async function uploadBase64(
         });
 
         if (result && (result as any).secure_url) {
+            let path = (result as any).secure_url;
+
+            // Auto-inject optimization parameters
+            if (path.includes('res.cloudinary.com') && !path.includes('/raw/upload/')) {
+                path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+            }
+
             return {
                 success: true,
-                path: (result as any).secure_url,
-                message: 'Uploaded to Cloudinary',
+                path: path,
+                message: 'Uploaded and optimized on Cloudinary',
             };
         }
         throw new Error('Upload failed');

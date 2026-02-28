@@ -23,12 +23,23 @@ export const uploadToCloudinary = (
   folder: string,
   resourceType: 'image' | 'video' | 'raw' | 'auto' = 'auto'
 ): Promise<any> => {
+  const options: any = {
+    folder,
+    resource_type: resourceType,
+  };
+
+  // If it's a video, add eager transformations for adaptive streaming (HLS)
+  if (resourceType === 'video') {
+    options.eager = [
+      { streaming_profile: 'full_hd', format: 'm3u8' }, // Adaptive Bitrate Streaming (HLS)
+      { quality: 'auto', fetch_format: 'auto' }        // Optimized standard MP4
+    ];
+    options.eager_async = true; // Process in background for better response time
+  }
+
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: resourceType,
-      },
+      options,
       (error, result) => {
         if (error) {
           console.error(`Cloudinary ${resourceType} upload error:`, error);
