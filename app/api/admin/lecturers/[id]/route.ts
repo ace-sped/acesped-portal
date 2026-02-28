@@ -62,7 +62,19 @@ export async function PUT(
             status: status || existingLecturer.status
         };
 
-        if (avatar !== undefined) updateData.avatar = avatar;
+        // Handle avatar upload to Cloudinary if it's base64
+        const { uploadBase64 } = require('@/lib/storage');
+
+        if (avatar !== undefined) {
+            let avatarUrl = avatar || null;
+            if (avatarUrl && avatarUrl.startsWith('data:image')) {
+                const uploadResult = await uploadBase64(avatarUrl, 'lecturers/avatars');
+                if (uploadResult.success) {
+                    avatarUrl = uploadResult.path;
+                }
+            }
+            updateData.avatar = avatarUrl;
+        }
 
         if (password && password.trim() !== '') {
             updateData.password = await bcrypt.hash(password, 10);

@@ -42,10 +42,34 @@ export async function POST(request: NextRequest) {
     // Generate a unique application number
     const applicationNumber = `ACE${new Date().getFullYear()}${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
 
+    // Handle file uploads to Cloudinary if they are base64
+    const { uploadBase64 } = require('@/lib/storage');
+    const fileFields = [
+      'avatar',
+      'nationalIdFile',
+      'transcriptFile',
+      'certificateFile',
+      'proposalFile',
+      'paymentProof'
+    ];
+
+    const processedData = { ...rest };
+
+    for (const field of fileFields) {
+      const fileData = processedData[field];
+      if (fileData && typeof fileData === 'string' && fileData.startsWith('data:')) {
+        const folder = `applications/${field.replace('File', 's')}`;
+        const uploadResult = await uploadBase64(fileData, folder);
+        if (uploadResult.success) {
+          processedData[field] = uploadResult.path;
+        }
+      }
+    }
+
     // Create the application in the database
     const application = await prisma.application.create({
       data: {
-        ...rest,
+        ...processedData,
         email: normalizedEmail,
         admissionSession: normalizedSession,
         applicationNumber,

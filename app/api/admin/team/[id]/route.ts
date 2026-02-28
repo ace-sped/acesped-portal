@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN role
-    
+
     const { id } = await params;
     const teamMember = await prisma.team.findUnique({
       where: { id },
@@ -42,7 +42,7 @@ export async function PUT(
 ) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN role
-    
+
     const { id } = await params;
     const body = await request.json();
     const {
@@ -89,6 +89,16 @@ export async function PUT(
       }
     }
 
+    // Handle image upload to Cloudinary if it's base64
+    const { uploadBase64 } = require('@/lib/storage');
+    let imageUrl = image;
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+      const uploadResult = await uploadBase64(imageUrl, 'team');
+      if (uploadResult.success) {
+        imageUrl = uploadResult.path;
+      }
+    }
+
     // Update team member
     const teamMember = await prisma.team.update({
       where: { id },
@@ -100,7 +110,7 @@ export async function PUT(
         ...(department !== undefined && { department: department || null }),
         ...(email && { email }),
         ...(phone !== undefined && { phone: phone || null }),
-        ...(image && { image }),
+        ...(imageUrl && { image: imageUrl }),
         ...(bio && { bio }),
         ...(qualifications !== undefined && { qualifications }),
         ...(researchAreas !== undefined && { researchAreas: researchAreas || null }),
@@ -119,8 +129,8 @@ export async function PUT(
   } catch (error: any) {
     console.error('Error updating team member:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to update team member',
         error: error.message || 'Unknown error'
       },
@@ -136,7 +146,7 @@ export async function DELETE(
 ) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN role
-    
+
     const { id } = await params;
     const teamMember = await prisma.team.findUnique({
       where: { id },
@@ -161,8 +171,8 @@ export async function DELETE(
   } catch (error: any) {
     console.error('Error deleting team member:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to delete team member',
         error: error.message || 'Unknown error'
       },

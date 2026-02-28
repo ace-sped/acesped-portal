@@ -91,6 +91,16 @@ export async function PUT(
       }
     }
 
+    // Handle brochure upload to Cloudinary if it's base64
+    const { uploadBase64 } = require('@/lib/storage');
+    let brochureUrl = brochure;
+    if (brochureUrl && brochureUrl.startsWith('data:')) {
+      const uploadResult = await uploadBase64(brochureUrl, 'programs/brochures');
+      if (uploadResult.success) {
+        brochureUrl = uploadResult.path;
+      }
+    }
+
     // Update program
     const program = await prisma.program.update({
       where: { id },
@@ -102,7 +112,7 @@ export async function PUT(
         ...(duration !== undefined && { duration: duration || null }),
         ...(studyMode !== undefined && { studyMode: studyMode || null }),
         ...(fee !== undefined && { fee: fee || null }),
-        ...(brochure !== undefined && { brochure: brochure || null }),
+        ...(brochureUrl !== undefined && { brochure: brochureUrl || null }),
         ...(overview && { overview }),
         ...(objectives !== undefined && { objectives: objectives || [] }),
         ...(curriculum !== undefined && { curriculum: curriculum || [] }),

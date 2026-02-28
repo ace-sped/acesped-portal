@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN or Center_Leader role
-    
+
     const services = await prisma.service.findMany({
       include: {
         _count: {
@@ -35,9 +35,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching services:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Failed to fetch services' 
+      {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to fetch services'
       },
       { status: 500 }
     );
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN or Center_Leader role
-    
+
     const body = await request.json();
     const {
       title,
@@ -81,6 +81,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle icon upload to Cloudinary if it's base64
+    const { uploadBase64 } = require('@/lib/storage');
+    let iconUrl = icon || null;
+    if (iconUrl && iconUrl.startsWith('data:image')) {
+      const uploadResult = await uploadBase64(iconUrl, 'services/icons');
+      if (uploadResult.success) {
+        iconUrl = uploadResult.path;
+      }
+    }
+
     // Create service
     const service = await prisma.service.create({
       data: {
@@ -88,7 +98,7 @@ export async function POST(request: NextRequest) {
         slug,
         subtitle: subtitle || null,
         description,
-        icon: icon || null,
+        icon: iconUrl,
         color: color || null,
         totalCourses: 0, // Will be auto-calculated from programs
         displayOrder: displayOrder !== undefined ? displayOrder : 0,
@@ -110,8 +120,8 @@ export async function POST(request: NextRequest) {
       stack: error.stack,
     });
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to create service',
         error: error.message || 'Unknown error',
         code: error.code || 'UNKNOWN',

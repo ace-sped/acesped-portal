@@ -148,7 +148,13 @@ export default function HeadOfInnovationProjects() {
                     setNewProject(prev => ({ ...prev, video: data.path }));
                 }
             } else {
-                const errorData = await response.json().catch(() => ({}));
+                let errorData;
+                const responseText = await response.text();
+                try {
+                    errorData = JSON.parse(responseText);
+                } catch (e) {
+                    errorData = { message: `Server error: ${response.status} ${response.statusText}`, raw: responseText };
+                }
                 console.error('Upload failed:', errorData);
                 alert(`Upload failed: ${errorData.message || 'Unknown error'}`);
             }

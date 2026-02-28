@@ -38,4 +38,11 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+# next-env
 next-env.d.ts
+
+# local uploads
+/public/uploads/
+*.html
+*.txt
+

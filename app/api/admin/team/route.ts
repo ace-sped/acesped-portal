@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN role
-    
+
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role');
     const isActive = searchParams.get('isActive');
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN role
-    
+
     const body = await request.json();
     const {
       name,
@@ -84,6 +84,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle image upload to Cloudinary if it's base64
+    const { uploadBase64 } = require('@/lib/storage');
+    let imageUrl = image;
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+      const uploadResult = await uploadBase64(imageUrl, 'team');
+      if (uploadResult.success) {
+        imageUrl = uploadResult.path;
+      }
+    }
+
     // Create team member
     const teamMember = await prisma.team.create({
       data: {
@@ -94,7 +104,7 @@ export async function POST(request: NextRequest) {
         department: department || null,
         email,
         phone: phone || null,
-        image,
+        image: imageUrl,
         bio,
         qualifications: qualifications || [],
         researchAreas: researchAreas || null,
@@ -113,8 +123,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error creating team member:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to create team member',
         error: error.message || 'Unknown error'
       },

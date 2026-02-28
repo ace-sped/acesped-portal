@@ -46,7 +46,15 @@ export async function PUT(request: NextRequest) {
     }
 
     if (avatar !== undefined) {
-      updates.avatar = avatar;
+      let avatarUrl = avatar;
+      if (avatarUrl && avatarUrl.startsWith('data:image')) {
+        const { uploadBase64 } = require('@/lib/storage');
+        const uploadResult = await uploadBase64(avatarUrl, 'users/avatars');
+        if (uploadResult.success) {
+          avatarUrl = uploadResult.path;
+        }
+      }
+      updates.avatar = avatarUrl;
     }
 
     // Update user profile

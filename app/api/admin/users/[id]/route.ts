@@ -63,17 +63,33 @@ export async function PUT(
       firstname: firstname || null,
       surname: surname || null,
       role,
-
     };
+
+    // Handle profile photo and signature upload to Cloudinary if they're base64
+    const { uploadBase64 } = require('@/lib/storage');
 
     // Only update avatar if provided or explicitly null
     if (avatar !== undefined) {
-      updateData.avatar = avatar || null;
+      let avatarUrl = avatar || null;
+      if (avatarUrl && avatarUrl.startsWith('data:image')) {
+        const uploadResult = await uploadBase64(avatarUrl, 'users/avatars');
+        if (uploadResult.success) {
+          avatarUrl = uploadResult.path;
+        }
+      }
+      updateData.avatar = avatarUrl;
     }
 
     // Only update signature if provided or explicitly null
     if (signature !== undefined) {
-      updateData.signature = signature || null;
+      let signatureUrl = signature || null;
+      if (signatureUrl && signatureUrl.startsWith('data:image')) {
+        const uploadResult = await uploadBase64(signatureUrl, 'users/signatures');
+        if (uploadResult.success) {
+          signatureUrl = uploadResult.path;
+        }
+      }
+      updateData.signature = signatureUrl;
     }
 
     // Only update password if provided

@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN or Center_Leader role
-    
+
     const { id } = await params;
     const service = await prisma.service.findUnique({
       where: { id },
@@ -28,9 +28,9 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching service:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Failed to fetch service' 
+      {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to fetch service'
       },
       { status: 500 }
     );
@@ -44,7 +44,7 @@ export async function PUT(
 ) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN or Center_Leader role
-    
+
     const { id } = await params;
     const body = await request.json();
     const {
@@ -85,6 +85,16 @@ export async function PUT(
       }
     }
 
+    // Handle icon upload to Cloudinary if it's base64
+    const { uploadBase64 } = require('@/lib/storage');
+    let iconUrl = icon;
+    if (iconUrl && iconUrl.startsWith('data:image')) {
+      const uploadResult = await uploadBase64(iconUrl, 'services/icons');
+      if (uploadResult.success) {
+        iconUrl = uploadResult.path;
+      }
+    }
+
     // Update service
     const service = await prisma.service.update({
       where: { id },
@@ -93,7 +103,7 @@ export async function PUT(
         ...(slug && { slug }),
         ...(subtitle !== undefined && { subtitle: subtitle || null }),
         ...(description && { description }),
-        ...(icon !== undefined && { icon: icon || null }),
+        ...(iconUrl !== undefined && { icon: iconUrl || null }),
         ...(color !== undefined && { color: color || null }),
         ...(totalCourses !== undefined && { totalCourses }),
         ...(displayOrder !== undefined && { displayOrder }),
@@ -109,8 +119,8 @@ export async function PUT(
   } catch (error: any) {
     console.error('Error updating service:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to update service',
         error: error.message || 'Unknown error'
       },
@@ -126,7 +136,7 @@ export async function DELETE(
 ) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN or Center_Leader role
-    
+
     const { id } = await params;
     const service = await prisma.service.findUnique({
       where: { id },
@@ -151,8 +161,8 @@ export async function DELETE(
   } catch (error: any) {
     console.error('Error deleting service:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to delete service',
         error: error.message || 'Unknown error'
       },

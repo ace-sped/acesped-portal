@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN role
-    
+
     const { id } = await params;
     const news = await prisma.news.findUnique({
       where: { id },
@@ -41,7 +41,7 @@ export async function PUT(
 ) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN role
-    
+
     const { id } = await params;
     const body = await request.json();
     const {
@@ -84,6 +84,16 @@ export async function PUT(
       }
     }
 
+    // Handle image upload to Cloudinary if it's base64
+    const { uploadBase64 } = require('@/lib/storage');
+    let imageUrl = image;
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+      const uploadResult = await uploadBase64(imageUrl, 'news');
+      if (uploadResult.success) {
+        imageUrl = uploadResult.path;
+      }
+    }
+
     // Update news
     const news = await prisma.news.update({
       where: { id },
@@ -94,7 +104,7 @@ export async function PUT(
         ...(excerpt && { excerpt }),
         ...(content && { content }),
         ...(author && { author }),
-        ...(image && { image }),
+        ...(imageUrl && { image: imageUrl }),
         ...(tags !== undefined && { tags: tags && Array.isArray(tags) && tags.length > 0 ? tags : undefined }),
         ...(publishedAt !== undefined && { publishedAt: publishedAt ? new Date(publishedAt) : null }),
         ...(isPublished !== undefined && { isPublished }),
@@ -110,8 +120,8 @@ export async function PUT(
   } catch (error: any) {
     console.error('Error updating news:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to update news',
         error: error.message || 'Unknown error'
       },
@@ -127,7 +137,7 @@ export async function DELETE(
 ) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN role
-    
+
     const { id } = await params;
     const news = await prisma.news.findUnique({
       where: { id },
@@ -152,8 +162,8 @@ export async function DELETE(
   } catch (error: any) {
     console.error('Error deleting news:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to delete news',
         error: error.message || 'Unknown error'
       },

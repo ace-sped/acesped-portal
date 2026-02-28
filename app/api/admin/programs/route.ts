@@ -135,6 +135,16 @@ export async function POST(request: NextRequest) {
       counter++;
     }
 
+    // Handle brochure upload to Cloudinary if it's base64
+    const { uploadBase64 } = require('@/lib/storage');
+    let brochureUrl = brochure || null;
+    if (brochureUrl && brochureUrl.startsWith('data:')) {
+      const uploadResult = await uploadBase64(brochureUrl, 'programs/brochures');
+      if (uploadResult.success) {
+        brochureUrl = uploadResult.path;
+      }
+    }
+
     // Create program
     const program = await prisma.program.create({
       data: {
@@ -145,7 +155,7 @@ export async function POST(request: NextRequest) {
         duration,
         studyMode,
         fee,
-        brochure,
+        brochure: brochureUrl,
         overview,
         objectives,
         curriculum,

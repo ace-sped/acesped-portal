@@ -89,13 +89,23 @@ export async function POST(request: NextRequest) {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Handle avatar upload to Cloudinary if it's base64
+        const { uploadBase64 } = require('@/lib/storage');
+        let avatarUrl = avatar || null;
+        if (avatarUrl && avatarUrl.startsWith('data:image')) {
+            const uploadResult = await uploadBase64(avatarUrl, 'lecturers/avatars');
+            if (uploadResult.success) {
+                avatarUrl = uploadResult.path;
+            }
+        }
+
         // Create lecturer
         const lecturer = await prisma.lecturer.create({
             data: {
                 email,
                 firstname,
                 surname,
-                avatar: avatar || null,
+                avatar: avatarUrl,
                 password: hashedPassword,
                 role: 'Lecturer', // Enforce role
                 staffId: staffId || null,

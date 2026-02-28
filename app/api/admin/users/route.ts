@@ -85,14 +85,33 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Handle profile photo and signature upload to Cloudinary if they're base64
+    const { uploadBase64 } = require('@/lib/storage');
+    let avatarUrl = avatar || null;
+    let signatureUrl = signature || null;
+
+    if (avatarUrl && avatarUrl.startsWith('data:image')) {
+      const uploadResult = await uploadBase64(avatarUrl, 'users/avatars');
+      if (uploadResult.success) {
+        avatarUrl = uploadResult.path;
+      }
+    }
+
+    if (signatureUrl && signatureUrl.startsWith('data:image')) {
+      const uploadResult = await uploadBase64(signatureUrl, 'users/signatures');
+      if (uploadResult.success) {
+        signatureUrl = uploadResult.path;
+      }
+    }
+
     // Create user
     const user = await prisma.user.create({
       data: {
         email,
         firstname: firstname || null,
         surname: surname || null,
-        avatar: avatar || null,
-        signature: signature || null,
+        avatar: avatarUrl,
+        signature: signatureUrl,
         password: hashedPassword,
         role,
       },

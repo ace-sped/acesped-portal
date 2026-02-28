@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN role
-    
+
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const isPublished = searchParams.get('isPublished');
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // TODO: Add authentication check for SUPER_ADMIN role
-    
+
     const body = await request.json();
     const {
       title,
@@ -71,10 +71,10 @@ export async function POST(request: NextRequest) {
 
     if (missingFields.length > 0) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: `Missing required fields: ${missingFields.join(', ')}`,
-          missingFields 
+          missingFields
         },
         { status: 400 }
       );
@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
     const validCategories = ['RESEARCH', 'ACHIEVEMENT', 'EVENT', 'ANNOUNCEMENT', 'COLLABORATION'];
     if (!validCategories.includes(category)) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: `Invalid category. Must be one of: ${validCategories.join(', ')}`,
           receivedCategory: category
         },
@@ -105,6 +105,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle image upload to Cloudinary if it's base64
+    const { uploadBase64 } = require('@/lib/storage');
+    let imageUrl = image.trim();
+    if (imageUrl.startsWith('data:image')) {
+      const uploadResult = await uploadBase64(imageUrl, 'news');
+      if (uploadResult.success) {
+        imageUrl = uploadResult.path;
+      }
+    }
+
     // Create news
     const news = await prisma.news.create({
       data: {
@@ -114,7 +124,7 @@ export async function POST(request: NextRequest) {
         excerpt: excerpt.trim(),
         content: content.trim(),
         author: author.trim(),
-        image: image.trim(),
+        image: imageUrl,
         tags: tags && Array.isArray(tags) && tags.length > 0 ? tags : undefined,
         publishedAt: publishedAt ? new Date(publishedAt) : null,
         isPublished: isPublished !== undefined ? isPublished : false,
@@ -129,12 +139,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error creating news:', error);
-    
+
     // Handle Prisma validation errors
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'A news item with this slug already exists',
           error: error.message
         },
@@ -143,8 +153,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to create news',
         error: error.message || 'Unknown error'
       },
