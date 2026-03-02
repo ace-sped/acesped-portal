@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import RoleLayout from '../../components/shared/RoleLayout';
-import { 
-  BookOpen, Plus, Search, Edit, Trash2, Eye, 
+import {
+  BookOpen, Plus, Search, Edit, Trash2, Eye,
   X, Check, AlertCircle, Filter, ChevronDown, Minus
 } from 'lucide-react';
 
@@ -168,7 +168,7 @@ export default function ProgramsManagement() {
     let filtered = programs;
 
     if (searchTerm) {
-      filtered = filtered.filter(program => 
+      filtered = filtered.filter(program =>
         program.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         program.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (program.level && program.level.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -187,58 +187,58 @@ export default function ProgramsManagement() {
 
   const handleCreateProgram = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate all required fields
     if (!formData.title || !formData.slug || !formData.level || !formData.overview) {
       showMessage('error', 'Please fill in all required fields (Title, Slug, Level, Overview)');
       return;
     }
-    
+
     if (!formData.serviceId) {
       showMessage('error', 'Please select a service');
       return;
     }
-    
+
     if (!formData.duration) {
       showMessage('error', 'Please enter a duration');
       return;
     }
-    
+
     if (!formData.studyMode) {
       showMessage('error', 'Please select a study mode');
       return;
     }
-    
+
     if (!formData.fee) {
       showMessage('error', 'Please enter a fee');
       return;
     }
-    
+
     if (!formData.brochure) {
       showMessage('error', 'Please upload a brochure');
       return;
     }
-    
+
     if (formData.objectives.length === 0) {
       showMessage('error', 'Please add at least one learning objective');
       return;
     }
-    
+
     if (formData.curriculum.length === 0) {
       showMessage('error', 'Please add at least one curriculum module');
       return;
     }
-    
+
     if (formData.requirements.length === 0) {
       showMessage('error', 'Please add at least one requirement');
       return;
     }
-    
+
     if (formData.careerPaths.length === 0) {
       showMessage('error', 'Please add at least one career path');
       return;
     }
-    
+
     setLoading(true);
 
     try {
@@ -380,7 +380,7 @@ export default function ProgramsManagement() {
     const curriculum = (program as any).curriculum;
     const requirements = (program as any).requirements;
     const careerPaths = (program as any).careerPaths;
-    
+
     setFormData({
       title: program.title || '',
       slug: program.slug || '',
@@ -556,30 +556,42 @@ export default function ProgramsManagement() {
   // Handle brochure file upload
   const handleBrochureUpload = async (file: File): Promise<string> => {
     try {
+      // Step 1: Get a signed upload signature from our backend
+      const sigResponse = await fetch(`/api/upload/signature?folder=programs/brochures`);
+      const sigData = await sigResponse.json();
+
+      if (!sigData.success) {
+        throw new Error('Failed to get upload signature');
+      }
+
+      // Step 2: Upload directly to Cloudinary from the browser
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('api_key', sigData.apiKey);
+      formData.append('timestamp', sigData.timestamp.toString());
+      formData.append('signature', sigData.signature);
+      formData.append('folder', sigData.folder);
 
-      const response = await fetch('/api/upload/brochure', {
+      const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/auto/upload`, {
         method: 'POST',
         body: formData,
       });
 
-      const data = await response.json();
-      if (data.success) {
-        return data.path;
+      const data = await uploadResponse.json();
+      if (uploadResponse.ok) {
+        let path = data.secure_url;
+        // Auto-inject optimization parameters
+        if (path.includes('res.cloudinary.com') && !path.includes('/raw/upload/')) {
+          path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+        }
+        return path;
       } else {
         throw new Error(data.message || 'Failed to upload brochure');
       }
     } catch (error) {
       console.error('Error uploading brochure:', error);
-      // Fallback to base64 if upload fails
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          resolve(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      });
+      showMessage('error', 'Failed to upload brochure to Cloudinary. Please try again.');
+      return '';
     }
   };
 
@@ -601,9 +613,9 @@ export default function ProgramsManagement() {
 
 
   return (
-    <RoleLayout 
-      rolePath="head-of-program" 
-      roleDisplayName="Head of Program" 
+    <RoleLayout
+      rolePath="head-of-program"
+      roleDisplayName="Head of Program"
       roleColor="orange"
     >
       <div>
@@ -631,11 +643,10 @@ export default function ProgramsManagement() {
 
         {/* Message */}
         {message && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center ${
-            message.type === 'success' 
-              ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' 
-              : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'
-          }`}>
+          <div className={`mb-6 p-4 rounded-lg flex items-center ${message.type === 'success'
+            ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+            : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'
+            }`}>
             {message.type === 'success' ? (
               <Check className="h-5 w-5 mr-2" />
             ) : (
@@ -701,18 +712,17 @@ export default function ProgramsManagement() {
                       <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-400">
                         {program.headOfProgram
                           ? `${program.headOfProgram.firstname || ''} ${program.headOfProgram.surname || ''}`.trim() ||
-                            program.headOfProgram.email
+                          program.headOfProgram.email
                           : 'Not set'}
                       </td>
                       <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-400">
                         {program.level ? program.level.replace(/_/g, ' ') : 'N/A'}
                       </td>
                       <td className="py-4 px-6">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          program.isActive 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                        }`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${program.isActive
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                          }`}>
                           {program.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
@@ -847,7 +857,7 @@ export default function ProgramsManagement() {
                       <option value="">Select Head of Program (Optional)</option>
                       {headOfProgramUsers.map((user) => (
                         <option key={user.id} value={user.id}>
-                          {user.firstname && user.surname 
+                          {user.firstname && user.surname
                             ? `${user.firstname} ${user.surname} (${user.email})`
                             : user.email}
                         </option>

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { 
-  User, Mail, Phone, Calendar, MapPin, Code, 
+import {
+  User, Mail, Phone, Calendar, MapPin, Code,
   Laptop, Wifi, Target, FileText, CheckCircle,
   ArrowRight, Loader2, X, Camera, Upload, Briefcase
 } from 'lucide-react';
@@ -39,31 +39,31 @@ interface SkillApplicationData {
   gender: string;
   address: string;
   avatar: string; // Passport photograph (frontend-only)
-  
+
   // Technical Interest (matches SkillApplication.technicalInterest)
   technicalInterest: string;
   courseId?: string; // Frontend-only field for course selection, not stored in DB
-  
+
   // Technical Experience (matches SkillApplication model)
   hasPriorExperience: string; // Yes or No
   priorTechSkills: string[]; // Array of tech skills, converted to Json in DB
-  
+
   // Device and Internet Access (matches SkillApplication model)
   hasLaptop: string; // Yes or No
   hasReliableInternet: string; // Yes or No
-  
+
   // Motivation and Commitment (matches SkillApplication model)
   whyLearnTechSkill: string; // @db.Text
   careerGoalsInTech: string; // @db.Text
   committedToProgram: string; // Yes or No
-  
+
   // Additional Information (matches SkillApplication model)
   howDidYouHear: string; // @db.Text
   disabilitiesOrAssistance: string; // Optional @db.Text
-  
+
   // Declaration (matches SkillApplication model)
   informationConfirmed: boolean; // @default(false)
-  
+
   // Note: paymentReference is handled separately in state, not in formData
   // Note: status, applicationNumber, createdAt, updatedAt are auto-generated
 }
@@ -169,7 +169,7 @@ export default function SkillApplicationPage() {
     const params = new URLSearchParams(window.location.search);
     const paymentCallback = params.get('payment_callback');
     const reference = params.get('reference') || params.get('trxref');
-    
+
     if (paymentCallback === 'true' && reference) {
       // Payment was successful - set payment status
       setPaymentSuccessful(true);
@@ -201,7 +201,7 @@ export default function SkillApplicationPage() {
 
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch('/api/skill-applications/submit', {
         method: 'POST',
@@ -233,7 +233,7 @@ export default function SkillApplicationPage() {
       if (!response.ok) {
         // Show more detailed error message
         const errorMsg = data?.message || data?.error || `Failed to submit application (${response.status})`;
-        
+
         // Log detailed error information
         const errorDetails = {
           status: response.status,
@@ -245,11 +245,11 @@ export default function SkillApplicationPage() {
           hasData: !!data,
           dataKeys: data ? Object.keys(data) : [],
         };
-        
+
         console.error('Application submission error:', errorDetails);
         throw new Error(errorMsg);
       }
-      
+
       // Log success for debugging
       console.log('Application submitted successfully:', {
         applicationNumber: data?.applicationNumber,
@@ -264,7 +264,7 @@ export default function SkillApplicationPage() {
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('skillApplicationData');
       }
-      
+
       // Reset form after 5 seconds
       setTimeout(() => {
         setFormData({
@@ -295,17 +295,17 @@ export default function SkillApplicationPage() {
       }, 5000);
     } catch (err) {
       console.error('Error in handleSubmitApplication:', err);
-      const errorMessage = err instanceof Error 
-        ? err.message 
+      const errorMessage = err instanceof Error
+        ? err.message
         : typeof err === 'string'
-        ? err
-        : 'An error occurred while submitting the application';
+          ? err
+          : 'An error occurred while submitting the application';
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
-  
+
   const [formData, setFormData] = useState<SkillApplicationData>({
     surname: '',
     firstname: '',
@@ -341,28 +341,68 @@ export default function SkillApplicationPage() {
     }
   };
 
-  const handleAvatarUpload = (file: File) => {
-    // Mirror behavior from main application form (size limit 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+  const handleAvatarUpload = async (file: File) => {
+    // Show local preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError('File size must be less than 10MB');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setFormData(prev => ({ ...prev, avatar: base64String }));
-      setAvatarPreview(base64String);
-    };
-    reader.readAsDataURL(file);
+    setLoading(true);
+    try {
+      // Step 1: Get signed upload signature
+      const sigResponse = await fetch('/api/upload/signature?folder=skill-applications/avatars');
+      const sigData = await sigResponse.json();
+
+      if (!sigData.success) {
+        throw new Error('Failed to get upload signature');
+      }
+
+      // Step 2: Upload directly to Cloudinary
+      const formDataValue = new FormData();
+      formDataValue.append('file', file);
+      formDataValue.append('api_key', sigData.apiKey);
+      formDataValue.append('timestamp', sigData.timestamp.toString());
+      formDataValue.append('signature', sigData.signature);
+      formDataValue.append('folder', sigData.folder);
+
+      const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`, {
+        method: 'POST',
+        body: formDataValue,
+      });
+
+      const data = await uploadResponse.json();
+      if (uploadResponse.ok) {
+        let path = data.secure_url;
+        // Auto-inject optimization parameters
+        if (path.includes('res.cloudinary.com')) {
+          path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+        }
+        setFormData(prev => ({ ...prev, avatar: path }));
+        setAvatarPreview(path);
+      } else {
+        throw new Error(data.message || 'Failed to upload photo');
+      }
+    } catch (err) {
+      console.error('Error uploading photo:', err);
+      setError('Failed to upload photo. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRadioChange = (name: string, value: string) => {
     if (name === 'technicalInterest') {
       // Find the course and store both title and ID
       const selectedCourse = courses.find(course => course.title === value);
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData(prev => ({
+        ...prev,
         [name]: value,
         courseId: selectedCourse?.id || undefined,
       }));
@@ -464,17 +504,17 @@ export default function SkillApplicationPage() {
   // Get course price from database or return default
   const getCoursePrice = (technicalInterest: string): number => {
     if (!technicalInterest) return 0;
-    
+
     // Find the selected course
     const selectedCourse = courses.find(course => course.title === technicalInterest);
-    
+
     if (selectedCourse && selectedCourse.fee) {
       // Extract numeric value from fee string (e.g., "₦150,000" -> 150000)
       const feeString = selectedCourse.fee.replace(/[₦,\s]/g, '');
       const price = parseInt(feeString, 10);
       return isNaN(price) ? 0 : price;
     }
-    
+
     return 0; // Default to 0 if no price found
   };
 
@@ -487,12 +527,12 @@ export default function SkillApplicationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     // If payment is already successful, don't proceed to payment again
     if (paymentSuccessful) {
       return;
     }
-    
+
     if (!validateForm()) {
       return;
     }
@@ -554,7 +594,7 @@ export default function SkillApplicationPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
-      
+
       <main className="pt-20 pb-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -569,14 +609,14 @@ export default function SkillApplicationPage() {
 
           {/* Success Modal */}
           {success && (
-            <div 
+            <div
               className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
               onClick={() => {
                 setSuccess(false);
                 setApplicationNumber(null);
               }}
             >
-              <div 
+              <div
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 md:p-8 relative transform transition-all duration-300 scale-100"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -607,7 +647,7 @@ export default function SkillApplicationPage() {
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Thank you for your application. We have received your submission and will get back to you soon.
                   </p>
-                  
+
                   {applicationNumber && (
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
@@ -823,82 +863,82 @@ export default function SkillApplicationPage() {
               </div>
             </section>
 
-      {/* Service Selection Section */}
-      <section className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 md:p-8">
-        <div className="flex items-center mb-6">
-          <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-lg mr-3">
-            <Briefcase className="h-6 w-6 text-teal-600 dark:text-teal-400" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Select Service
-          </h2>
-        </div>
+            {/* Service Selection Section */}
+            <section className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 md:p-8">
+              <div className="flex items-center mb-6">
+                <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-lg mr-3">
+                  <Briefcase className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Select Service
+                </h2>
+              </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-            Choose the service you want to apply under <span className="text-red-500">*</span>
-          </label>
-
-          {loadingServices ? (
-            <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-6 w-6 animate-spin text-green-600" />
-              <span className="ml-2 text-gray-600 dark:text-gray-400">Loading services...</span>
-            </div>
-          ) : services.length === 0 ? (
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-              <p className="text-yellow-800 dark:text-yellow-200">
-                No services available at the moment. Please check back later.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {services.map((service) => {
-                const slugLower = (service.slug || '').toLowerCase();
-                const displayTitle = slugLower.includes('professional-short')
-                  ? 'ACE-SPED Professional Short Courses'
-                  : 'ACE-SPED Innovation, Vocational & Entrepreneurship Short Courses';
-
-                return (
-                <label
-                  key={service.id}
-                  className="flex items-start p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <input
-                    type="radio"
-                    name="service"
-                    value={service.slug}
-                    checked={selectedServiceSlug === service.slug}
-                    onChange={() => {
-                      setSelectedServiceSlug(service.slug);
-                      // reset program selection when service changes
-                      setFormData(prev => ({
-                        ...prev,
-                        technicalInterest: '',
-                        courseId: undefined,
-                      }));
-                    }}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 mt-1"
-                    required
-                  />
-                  <div className="ml-3 flex-1">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <span className="text-gray-900 dark:text-white font-medium">{displayTitle}</span>
-                        {service.subtitle && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            {service.subtitle}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                  Choose the service you want to apply under <span className="text-red-500">*</span>
                 </label>
-              );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
+
+                {loadingServices ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-6 w-6 animate-spin text-green-600" />
+                    <span className="ml-2 text-gray-600 dark:text-gray-400">Loading services...</span>
+                  </div>
+                ) : services.length === 0 ? (
+                  <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <p className="text-yellow-800 dark:text-yellow-200">
+                      No services available at the moment. Please check back later.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {services.map((service) => {
+                      const slugLower = (service.slug || '').toLowerCase();
+                      const displayTitle = slugLower.includes('professional-short')
+                        ? 'ACE-SPED Professional Short Courses'
+                        : 'ACE-SPED Innovation, Vocational & Entrepreneurship Short Courses';
+
+                      return (
+                        <label
+                          key={service.id}
+                          className="flex items-start p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <input
+                            type="radio"
+                            name="service"
+                            value={service.slug}
+                            checked={selectedServiceSlug === service.slug}
+                            onChange={() => {
+                              setSelectedServiceSlug(service.slug);
+                              // reset program selection when service changes
+                              setFormData(prev => ({
+                                ...prev,
+                                technicalInterest: '',
+                                courseId: undefined,
+                              }));
+                            }}
+                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 mt-1"
+                            required
+                          />
+                          <div className="ml-3 flex-1">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <span className="text-gray-900 dark:text-white font-medium">{displayTitle}</span>
+                                {service.subtitle && (
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    {service.subtitle}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </section>
 
             {/* Program Selection Section */}
             <section className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 md:p-8">

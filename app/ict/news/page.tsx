@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import RoleLayout from '../../components/shared/RoleLayout';
 import Image from 'next/image';
-import { 
-  Newspaper, Plus, Search, Edit, Trash2, Eye, 
+import {
+  Newspaper, Plus, Search, Edit, Trash2, Eye,
   X, Check, AlertCircle, Filter, Calendar, User, Tag, Upload, Camera
 } from 'lucide-react';
 
@@ -89,7 +89,7 @@ export default function NewsManagement() {
     let filtered = news;
 
     if (searchTerm) {
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.author.toLowerCase().includes(searchTerm.toLowerCase())
@@ -120,9 +120,9 @@ export default function NewsManagement() {
       .replace(/(^-|-$)/g, '');
   };
 
-  const handleImageUpload = (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      showMessage('error', 'File size must be less than 5MB');
+  const handleImageUpload = async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      showMessage('error', 'File size must be less than 10MB');
       return;
     }
 
@@ -131,18 +131,49 @@ export default function NewsManagement() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setFormData({ ...formData, image: base64String });
-      setImagePreview(base64String);
-    };
-    reader.readAsDataURL(file);
+    setLoading(true);
+    try {
+      // Step 1: Get signature
+      const sigResponse = await fetch('/api/upload/signature?folder=news');
+      const sigData = await sigResponse.json();
+
+      if (!sigData.success) throw new Error('Failed to get signature');
+
+      // Step 2: Upload to Cloudinary
+      const formDataValue = new FormData();
+      formDataValue.append('file', file);
+      formDataValue.append('api_key', sigData.apiKey);
+      formDataValue.append('timestamp', sigData.timestamp.toString());
+      formDataValue.append('signature', sigData.signature);
+      formDataValue.append('folder', sigData.folder);
+
+      const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`, {
+        method: 'POST',
+        body: formDataValue,
+      });
+
+      const data = await uploadResponse.json();
+      if (uploadResponse.ok) {
+        let path = data.secure_url;
+        if (path.includes('res.cloudinary.com')) {
+          path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+        }
+        setFormData({ ...formData, image: path });
+        setImagePreview(path);
+      } else {
+        throw new Error(data.message || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      showMessage('error', 'Failed to upload image');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddImage = (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      showMessage('error', 'File size must be less than 5MB');
+  const handleAddImage = async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      showMessage('error', 'File size must be less than 10MB');
       return;
     }
 
@@ -151,12 +182,41 @@ export default function NewsManagement() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setImages([...images, base64String]);
-    };
-    reader.readAsDataURL(file);
+    setLoading(true);
+    try {
+      const sigResponse = await fetch('/api/upload/signature?folder=news/gallery');
+      const sigData = await sigResponse.json();
+
+      if (!sigData.success) throw new Error('Failed to get signature');
+
+      const formDataValue = new FormData();
+      formDataValue.append('file', file);
+      formDataValue.append('api_key', sigData.apiKey);
+      formDataValue.append('timestamp', sigData.timestamp.toString());
+      formDataValue.append('signature', sigData.signature);
+      formDataValue.append('folder', sigData.folder);
+
+      const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`, {
+        method: 'POST',
+        body: formDataValue,
+      });
+
+      const data = await uploadResponse.json();
+      if (uploadResponse.ok) {
+        let path = data.secure_url;
+        if (path.includes('res.cloudinary.com')) {
+          path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+        }
+        setImages([...images, path]);
+      } else {
+        throw new Error(data.message || 'Gallery upload failed');
+      }
+    } catch (error) {
+      console.error('Gallery upload error:', error);
+      showMessage('error', 'Failed to upload gallery image');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRemoveImage = (index: number) => {
@@ -331,9 +391,9 @@ export default function NewsManagement() {
   };
 
   return (
-    <RoleLayout 
-      rolePath="ict" 
-      roleDisplayName="ICT" 
+    <RoleLayout
+      rolePath="ict"
+      roleDisplayName="ICT"
       roleColor="blue"
     >
       <div className="p-8">
@@ -361,11 +421,10 @@ export default function NewsManagement() {
 
         {/* Message */}
         {message && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center ${
-            message.type === 'success' 
-              ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' 
+          <div className={`mb-6 p-4 rounded-lg flex items-center ${message.type === 'success'
+              ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300'
               : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'
-          }`}>
+            }`}>
             {message.type === 'success' ? (
               <Check className="h-5 w-5 mr-2" />
             ) : (
@@ -449,11 +508,10 @@ export default function NewsManagement() {
                       <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-400">{item.author}</td>
                       <td className="py-4 px-6">
                         <div className="flex flex-col gap-1">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            item.isPublished 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.isPublished
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                               : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                          }`}>
+                            }`}>
                             {item.isPublished ? 'Published' : 'Draft'}
                           </span>
                           {item.isFeatured && (
@@ -590,7 +648,7 @@ export default function NewsManagement() {
                         ))}
                       </div>
                     )}
-                    
+
                     {/* Add more images button */}
                     <div>
                       <input

@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  ArrowRight, ArrowLeft, Check, Upload, X, User, Users, 
+import {
+  ArrowRight, ArrowLeft, Check, Upload, X, User, Users,
   GraduationCap, Briefcase, FileText, Camera,
   Mail, Phone, MapPin, Calendar, BookOpen, CreditCard,
   Info, AlertTriangle, XCircle, CheckCircle
@@ -13,15 +13,15 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../components/navbar/page';
 import Footer from '../components/footer/page';
 
-type ApplicationStep = 
-  | 'requirements' 
-  | 'personal' 
-  | 'nextOfKin' 
-  | 'program' 
-  | 'education' 
-  | 'employment' 
-  | 'research' 
-  | 'recommendations' 
+type ApplicationStep =
+  | 'requirements'
+  | 'personal'
+  | 'nextOfKin'
+  | 'program'
+  | 'education'
+  | 'employment'
+  | 'research'
+  | 'recommendations'
   | 'payment';
 
 interface ApplicationData {
@@ -48,7 +48,7 @@ interface ApplicationData {
   postalCode: string;
   religion: string;
   avatar: string;
-  
+
   // Next of Kin
   kinFirstname: string;
   kinSurname: string;
@@ -56,13 +56,13 @@ interface ApplicationData {
   kinPhone: string;
   kinEmail: string;
   kinAddress: string;
-  
+
   // Program Selection
   programType: string;
   programChoice: string;
   admissionSession: string;
   modeOfStudy: string;
-  
+
   // Educational Background
   previousDegree: string;
   previousInstitution: string;
@@ -71,7 +71,7 @@ interface ApplicationData {
   previousFieldOfStudy: string;
   transcriptFile: string;
   certificateFile: string;
-  
+
   // Employment Details
   employmentStatus: string;
   currentEmployer: string;
@@ -79,14 +79,14 @@ interface ApplicationData {
   employmentStartDate: string;
   employmentEndDate: string;
   reasonForPursuing: string;
-  
+
   // Research Proposal
   researchTitle: string;
   researchAbstract: string;
   researchObjectives: string;
   researchMethodology: string;
   proposalFile: string;
-  
+
   // Recommendations
   referee1Name: string;
   referee1Email: string;
@@ -96,7 +96,7 @@ interface ApplicationData {
   referee2Email: string;
   referee2Phone: string;
   referee2Institution: string;
-  
+
   // Payment
   paymentMethod: string;
   paymentReference: string;
@@ -388,12 +388,12 @@ export default function ApplicationPage() {
   const [duplicateCheckLoading, setDuplicateCheckLoading] = useState(false);
   const [duplicateCheckError, setDuplicateCheckError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-const [alertModal, setAlertModal] = useState<{
-  title: string;
-  message: string;
-  variant: 'info' | 'success' | 'warning' | 'error';
-} | null>(null);
-  
+  const [alertModal, setAlertModal] = useState<{
+    title: string;
+    message: string;
+    variant: 'info' | 'success' | 'warning' | 'error';
+  } | null>(null);
+
   const [formData, setFormData] = useState<ApplicationData>({
     email: '',
     firstname: '',
@@ -593,9 +593,8 @@ const [alertModal, setAlertModal] = useState<{
   };
 
   const duplicateWarningText = duplicateApplication.exists
-    ? `An application for ${formData.email || 'this email'} in ${formData.admissionSession || 'this session'} already exists${
-        duplicateApplication.applicationNumber ? ` (Ref: ${duplicateApplication.applicationNumber})` : ''
-      }. Please update the email address or choose another session before continuing.`
+    ? `An application for ${formData.email || 'this email'} in ${formData.admissionSession || 'this session'} already exists${duplicateApplication.applicationNumber ? ` (Ref: ${duplicateApplication.applicationNumber})` : ''
+    }. Please update the email address or choose another session before continuing.`
     : '';
 
   const isNextDisabled =
@@ -627,21 +626,65 @@ const [alertModal, setAlertModal] = useState<{
     }
   };
 
-  const handleFileUpload = (field: keyof ApplicationData, file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      openAlertModal('File Too Large', 'File size must be less than 5MB.', 'warning');
+  const handleFileUpload = async (field: keyof ApplicationData, file: File) => {
+    // Show local preview for avatar immediately
+    if (field === 'avatar') {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // Increased to 10MB for documents
+      openAlertModal('File Too Large', 'File size must be less than 10MB.', 'warning');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setFormData({ ...formData, [field]: base64String });
-      if (field === 'avatar') {
-        setAvatarPreview(base64String);
+    setLoading(true); // Re-use general loading state for visual feedback
+    try {
+      // Step 1: Get a signed upload signature from our backend
+      const folder = field === 'avatar' ? 'applications/avatars' : 'applications/documents';
+      const sigResponse = await fetch(`/api/upload/signature?folder=${folder}`);
+      const sigData = await sigResponse.json();
+
+      if (!sigData.success) {
+        throw new Error('Failed to get upload signature');
       }
-    };
-    reader.readAsDataURL(file);
+
+      // Step 2: Upload directly to Cloudinary from the browser
+      const formDataValue = new FormData();
+      formDataValue.append('file', file);
+      formDataValue.append('api_key', sigData.apiKey);
+      formDataValue.append('timestamp', sigData.timestamp.toString());
+      formDataValue.append('signature', sigData.signature);
+      formDataValue.append('folder', sigData.folder);
+
+      const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/auto/upload`, {
+        method: 'POST',
+        body: formDataValue,
+      });
+
+      const data = await uploadResponse.json();
+      if (uploadResponse.ok) {
+        let path = data.secure_url;
+        // Auto-inject optimization parameters for images
+        if (path.includes('res.cloudinary.com') && !path.includes('/raw/upload/') && !path.endsWith('.pdf')) {
+          path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+        }
+        setFormData(prev => ({ ...prev, [field]: path }));
+        if (field === 'avatar') {
+          setAvatarPreview(path);
+        }
+      } else {
+        throw new Error(data.message || 'Failed to upload file');
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      openAlertModal('Upload Error', 'Failed to upload file. Please try again.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleNext = () => {
@@ -859,7 +902,7 @@ const [alertModal, setAlertModal] = useState<{
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center">2025-2026  ACESPED APPLICATION FORM FOR POSTGRADUATE PROGRAMMES</h2>
             <p>Welcome to the application page of the Africa Centre of Excellence for Sustainable Energy and Power Development (ACESPED).</p>
-            <p>You would be expected to submit the following types of  information during the course of your application:</p>            
+            <p>You would be expected to submit the following types of  information during the course of your application:</p>
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-100 mb-4">You would be expected to submit the following types of  information during the course of your application:</h3>
               <ul className="space-y-3">
@@ -894,39 +937,39 @@ const [alertModal, setAlertModal] = useState<{
                 <li className="flex items-start">
                   <Check className="h-5 w-5 text-green-600 mr-3 mt-0.5" />
                   <span className="text-gray-700 dark:text-gray-300">Two recommendation letters signed by your previous Supervisors (in PDF format)</span>
-                </li>                
+                </li>
               </ul>
             </div>
 
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-yellow-900 dark:text-yellow-100 mb-4">List of Attachments Required</h3>
               <h4>For avoidance of doubt, please get the following files ready before you commence the application process:</h4>
-              
-              <ul className="space-y-2 mt-4 text-gray-700 dark:text-gray-300">               
+
+              <ul className="space-y-2 mt-4 text-gray-700 dark:text-gray-300">
                 <li className="flex items-start">
                   <Check className="h-5 w-5 text-yellow-600 mr-3 mt-0.5" />
                   <span className="text-gray-700 dark:text-gray-300">Passport ID Data Page/ National ID Information (PDF format)</span>
-                </li>  
+                </li>
                 <li className="flex items-start">
                   <Check className="h-5 w-5 text-yellow-600 mr-3 mt-0.5" />
                   <span className="text-gray-700 dark:text-gray-300">Passport Photograph (PNG/JPEG format)</span>
-                </li>  
+                </li>
                 <li className="flex items-start">
                   <Check className="h-5 w-5 text-yellow-600 mr-3 mt-0.5" />
                   <span className="text-gray-700 dark:text-gray-300">Unofficial Transcript for Bachelors/Masters Certificates merged as one document (PDF format) - <em>Optional: Can be presented during admission clearance</em></span>
-                </li>  
+                </li>
                 <li className="flex items-start">
                   <Check className="h-5 w-5 text-yellow-600 mr-3 mt-0.5" />
                   <span className="text-gray-700 dark:text-gray-300">A copy of your Bachelors and/or Masters Project Report (PDF format)</span>
-                </li>  
+                </li>
                 <li className="flex items-start">
                   <Check className="h-5 w-5 text-yellow-600 mr-3 mt-0.5" />
                   <span className="text-gray-700 dark:text-gray-300">Two Recommendation letters (PDF format)</span>
-                </li> 
+                </li>
                 <li className="flex items-start">
                   <Check className="h-5 w-5 text-yellow-600 mr-3 mt-0.5" />
                   <span className="text-gray-700 dark:text-gray-300">A Two paged Research Proposal (MS Word format - .doc or .docx)</span>
-                </li>                
+                </li>
               </ul>
             </div>
 
@@ -957,7 +1000,7 @@ const [alertModal, setAlertModal] = useState<{
         return (
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Personal Information</h2>
-            
+
             {/* Avatar Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -967,9 +1010,9 @@ const [alertModal, setAlertModal] = useState<{
                 <div className="relative">
                   {avatarPreview ? (
                     <div className="relative h-32 w-32 rounded-lg overflow-hidden border-2 border-gray-300 dark:border-gray-600">
-                      <Image 
-                        src={avatarPreview} 
-                        alt="Avatar preview" 
+                      <Image
+                        src={avatarPreview}
+                        alt="Avatar preview"
                         fill
                         className="object-cover"
                       />
@@ -1040,7 +1083,7 @@ const [alertModal, setAlertModal] = useState<{
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white"
                   placeholder="Michael"
                 />
-              </div> 
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Maiden Name
@@ -1052,7 +1095,7 @@ const [alertModal, setAlertModal] = useState<{
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white"
                   placeholder="Enter maiden name if applicable"
                 />
-              </div>             
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -1130,7 +1173,7 @@ const [alertModal, setAlertModal] = useState<{
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">              
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Country of Residence *
@@ -1162,8 +1205,8 @@ const [alertModal, setAlertModal] = useState<{
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white"
                   placeholder="Street address, apartment, suite, etc."
                 />
-              </div>                
-              
+              </div>
+
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1226,7 +1269,7 @@ const [alertModal, setAlertModal] = useState<{
                   ))}
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Home Town *
@@ -1281,7 +1324,7 @@ const [alertModal, setAlertModal] = useState<{
                   Upload a copy of your NIN card or International Passport data page. Max size: 5MB. Formats: PDF, JPG, PNG
                 </p>
               </div>
-            </div>      
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1299,7 +1342,7 @@ const [alertModal, setAlertModal] = useState<{
                 <option value="Traditional">Traditional</option>
                 <option value="Other">Other</option>
               </select>
-            </div>           
+            </div>
           </div>
         );
 
@@ -1971,7 +2014,7 @@ const [alertModal, setAlertModal] = useState<{
               Complete your application by making the required payment via Paystack
             </p>
 
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-8">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-3xl font-bold text-green-900 dark:text-green-100">Application Fee</h3>
@@ -2017,7 +2060,7 @@ const [alertModal, setAlertModal] = useState<{
                     </p>
                   </div>
 
-                  <button 
+                  <button
                     onClick={(e) => handlePaystackPayment(e)}
                     type="button"
                     disabled={!formData.email || formData.email.trim() === ''}
@@ -2057,7 +2100,7 @@ const [alertModal, setAlertModal] = useState<{
 
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
               <p className="text-sm text-yellow-900 dark:text-yellow-100">
-                <strong>Note:</strong> After successful payment, you can proceed to submit your application. 
+                <strong>Note:</strong> After successful payment, you can proceed to submit your application.
                 You will receive a confirmation email with your application reference number within 24 hours.
               </p>
             </div>
@@ -2078,13 +2121,13 @@ const [alertModal, setAlertModal] = useState<{
       const trxref = urlParams.get('trxref');
       const paymentCallback = urlParams.get('payment_callback');
       const paymentRef = reference || trxref;
-      
+
       if (paymentRef) {
         // Restore form data from sessionStorage if available
         const savedData = sessionStorage.getItem('aceApplicationData');
         const savedStep = sessionStorage.getItem('aceApplicationStep');
         let restoredApplicantEmail = '';
-        
+
         if (savedData) {
           try {
             const parsedData = JSON.parse(savedData);
@@ -2094,14 +2137,14 @@ const [alertModal, setAlertModal] = useState<{
               paymentReference: paymentRef,
               paymentMethod: 'Paystack'
             });
-            
+
             // Navigate to payment step
             if (savedStep) {
               setCurrentStep(savedStep as ApplicationStep);
             } else {
               setCurrentStep('payment');
             }
-            
+
             // Clear sessionStorage
             sessionStorage.removeItem('aceApplicationData');
             sessionStorage.removeItem('aceApplicationStep');
@@ -2118,10 +2161,10 @@ const [alertModal, setAlertModal] = useState<{
           // Navigate to payment step to show success
           setCurrentStep('payment');
         }
-        
+
         // Always set payment completed if reference exists
         setPaymentCompleted(true);
-        
+
         // Save payment reference to localStorage for persistence
         const paymentEmail = restoredApplicantEmail || formData.email || '';
         try {
@@ -2136,10 +2179,10 @@ const [alertModal, setAlertModal] = useState<{
         } catch (storageError) {
           console.error('Error storing payment record:', storageError);
         }
-        
+
         // Clean URL
         window.history.replaceState({}, '', window.location.pathname);
-        
+
         // Show success message
         openAlertModal(
           'Payment Successful',
@@ -2246,199 +2289,195 @@ const [alertModal, setAlertModal] = useState<{
 
   return (
     <>
-      
+
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navbar />
-        
+
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Progress Stepper */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-8">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = step.id === currentStep;
-              const isCompleted = index < currentStepIndex;
-              const stepDisabled = duplicateApplication.exists && index > programStepIndex;
-              
-              return (
-                <div key={step.id} className="flex items-center flex-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (stepDisabled) return;
-                      goToStep(step.id);
-                    }}
-                    disabled={stepDisabled}
-                    className={`flex flex-col items-center flex-1 focus:outline-none group ${
-                      stepDisabled ? 'cursor-not-allowed opacity-60' : ''
-                    }`}
-                  >
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
-                        isActive
-                          ? 'bg-green-600 border-green-600 text-white scale-110'
-                          : isCompleted
-                          ? 'bg-green-600 border-green-600 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 group-hover:border-green-500'
-                      }`}
+          {/* Progress Stepper */}
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-8">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                const isActive = step.id === currentStep;
+                const isCompleted = index < currentStepIndex;
+                const stepDisabled = duplicateApplication.exists && index > programStepIndex;
+
+                return (
+                  <div key={step.id} className="flex items-center flex-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (stepDisabled) return;
+                        goToStep(step.id);
+                      }}
+                      disabled={stepDisabled}
+                      className={`flex flex-col items-center flex-1 focus:outline-none group ${stepDisabled ? 'cursor-not-allowed opacity-60' : ''
+                        }`}
                     >
-                      {isCompleted ? <Check className="h-6 w-6" /> : <Icon className="h-6 w-6" />}
-                    </div>
-                    <span
-                      className={`mt-2 text-xs font-medium hidden md:block ${
-                        isActive || isCompleted
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400'
-                      }`}
-                    >
-                      {step.title}
-                    </span>
-                  </button>
-                  {index < steps.length - 1 && (
-                    <div
-                      className={`h-1 flex-1 mx-2 transition-all ${
-                        isCompleted
-                          ? 'bg-green-600'
-                          : 'bg-gray-300 dark:bg-gray-700'
-                      }`}
-                    />
-                  )}
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${isActive
+                            ? 'bg-green-600 border-green-600 text-white scale-110'
+                            : isCompleted
+                              ? 'bg-green-600 border-green-600 text-white'
+                              : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 group-hover:border-green-500'
+                          }`}
+                      >
+                        {isCompleted ? <Check className="h-6 w-6" /> : <Icon className="h-6 w-6" />}
+                      </div>
+                      <span
+                        className={`mt-2 text-xs font-medium hidden md:block ${isActive || isCompleted
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400'
+                          }`}
+                      >
+                        {step.title}
+                      </span>
+                    </button>
+                    {index < steps.length - 1 && (
+                      <div
+                        className={`h-1 flex-1 mx-2 transition-all ${isCompleted
+                            ? 'bg-green-600'
+                            : 'bg-gray-300 dark:bg-gray-700'
+                          }`}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Form Content */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+            {renderStepContent()}
+          </div>
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center">
+            <button
+              onClick={handlePrevious}
+              disabled={currentStepIndex === 0}
+              className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium"
+            >
+              <ArrowLeft className="h-5 w-5 mr-2" />
+              Previous
+            </button>
+
+            {currentStepIndex === steps.length - 1 ? (
+              <div className="flex flex-col items-end">
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading || !paymentCompleted}
+                  className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold"
+                >
+                  {loading ? 'Submitting...' : 'Submit Application'}
+                  <Check className="h-5 w-5 ml-2" />
+                </button>
+                {!paymentCompleted && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                    Please complete payment to submit your application
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-end">
+                <button
+                  onClick={handleNext}
+                  disabled={isNextDisabled}
+                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold"
+                >
+                  Next
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                </button>
+                {duplicateApplication.exists && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-right">
+                    {duplicateWarningText}
+                  </p>
+                )}
+                {!duplicateApplication.exists && currentStep === 'requirements' && !acceptedRequirements && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-right">
+                    Please read and accept the requirements before proceeding.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {showSuccessModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg p-8 relative text-center border border-green-100 dark:border-green-800">
+              <div className="mx-auto w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center mb-6">
+                <Check className="h-8 w-8 text-green-600 dark:text-green-300" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                Application Submitted!
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                Thank you for applying. A confirmation email containing your application details has been sent to{' '}
+                <span className="font-semibold text-gray-900 dark:text-white">{formData.email || 'your email address'}</span>. Please keep it safe for your records.
+              </p>
+              <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-4 mb-6 text-left space-y-3 border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Applicant</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {formData.firstname} {formData.surname}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Form Content */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
-          {renderStepContent()}
-        </div>
-
-        {/* Navigation Buttons */}
-        <div className="flex justify-between items-center">
-          <button
-            onClick={handlePrevious}
-            disabled={currentStepIndex === 0}
-            className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium"
-          >
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            Previous
-          </button>
-
-          {currentStepIndex === steps.length - 1 ? (
-            <div className="flex flex-col items-end">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Program</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {formData.programChoice || 'Not specified'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Admission Session</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {formData.admissionSession || 'Not specified'}
+                  </span>
+                </div>
+              </div>
               <button
-                onClick={handleSubmit}
-                disabled={loading || !paymentCompleted}
-                className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  router.push('/');
+                }}
+                className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg hover:scale-[1.02] transition-all"
               >
-                {loading ? 'Submitting...' : 'Submit Application'}
-                <Check className="h-5 w-5 ml-2" />
+                Go to Homepage
               </button>
-              {!paymentCompleted && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                  Please complete payment to submit your application
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col items-end">
               <button
-                onClick={handleNext}
-                disabled={isNextDisabled}
-                className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold"
+                onClick={() => setShowSuccessModal(false)}
+                className="mt-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
-                Next
-                <ArrowRight className="h-5 w-5 ml-2" />
+                Ok
               </button>
-              {duplicateApplication.exists && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-right">
-                  {duplicateWarningText}
-                </p>
-              )}
-              {!duplicateApplication.exists && currentStep === 'requirements' && !acceptedRequirements && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-right">
-                  Please read and accept the requirements before proceeding.
-                </p>
-              )}
             </div>
-          )}
-        </div>
-      </div>
-
-      {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg p-8 relative text-center border border-green-100 dark:border-green-800">
-            <div className="mx-auto w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center mb-6">
-              <Check className="h-8 w-8 text-green-600 dark:text-green-300" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Application Submitted!
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-              Thank you for applying. A confirmation email containing your application details has been sent to{' '}
-              <span className="font-semibold text-gray-900 dark:text-white">{formData.email || 'your email address'}</span>. Please keep it safe for your records.
-            </p>
-            <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-4 mb-6 text-left space-y-3 border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Applicant</span>
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  {formData.firstname} {formData.surname}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Program</span>
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  {formData.programChoice || 'Not specified'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Admission Session</span>
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  {formData.admissionSession || 'Not specified'}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setShowSuccessModal(false);
-                router.push('/');
-              }}
-              className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg hover:scale-[1.02] transition-all"
-            >
-              Go to Homepage
-            </button>
-            <button
-              onClick={() => setShowSuccessModal(false)}
-              className="mt-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-            >
-              Ok
-            </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {alertModal && activeAlertStyle && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 relative text-center border ${activeAlertStyle.border}`}>
-            <div className={`mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-4 ${activeAlertStyle.iconBg}`}>
-              {React.createElement(activeAlertStyle.icon, { className: `h-7 w-7 ${activeAlertStyle.accent}` })}
+        {alertModal && activeAlertStyle && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 relative text-center border ${activeAlertStyle.border}`}>
+              <div className={`mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-4 ${activeAlertStyle.iconBg}`}>
+                {React.createElement(activeAlertStyle.icon, { className: `h-7 w-7 ${activeAlertStyle.accent}` })}
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                {alertModal.title}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                {alertModal.message}
+              </p>
+              <button
+                onClick={() => setAlertModal(null)}
+                className="w-full px-5 py-3 rounded-xl bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 font-semibold hover:shadow-lg hover:scale-[1.02] transition-all"
+              >
+                Ok
+              </button>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              {alertModal.title}
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-              {alertModal.message}
-            </p>
-            <button
-              onClick={() => setAlertModal(null)}
-              className="w-full px-5 py-3 rounded-xl bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 font-semibold hover:shadow-lg hover:scale-[1.02] transition-all"
-            >
-              Ok
-            </button>
           </div>
-        </div>
-      )}
+        )}
 
         <Footer />
       </div>

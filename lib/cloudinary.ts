@@ -28,10 +28,20 @@ export const uploadToCloudinary = (
     resource_type: resourceType,
   };
 
-  // If it's a video, add eager transformations for adaptive streaming (HLS)
+  // If it's a video, apply incoming transformation to auto-compress the stored file
+  // and add eager transformations for adaptive streaming
   if (resourceType === 'video') {
+    // Incoming transformation: compress on storage
+    // - c_limit: only downscale, never upscale
+    // - w_1280: cap at 1280px width (HD)
+    // - q_auto: automatic quality
+    // - vc_auto: automatic codec (H.265 where supported)
+    // - br_2000k: cap bitrate at 2 Mbps for web-friendly size
+    options.transformation = [
+      { width: 1280, crop: 'limit', quality: 'auto', video_codec: 'auto', bit_rate: '2000k' }
+    ];
     options.eager = [
-      { streaming_profile: 'full_hd', format: 'm3u8' }, // Adaptive Bitrate Streaming (HLS)
+      { streaming_profile: 'hd', format: 'm3u8' },   // Adaptive Bitrate Streaming (HLS)
       { quality: 'auto', fetch_format: 'auto' }        // Optimized standard MP4
     ];
     options.eager_async = true; // Process in background for better response time

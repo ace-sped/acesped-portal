@@ -182,16 +182,49 @@ export default function LecturerManagement() {
         setShowEditModal(true);
     };
 
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) return showMessage('error', 'Max size 2MB');
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData({ ...formData, avatar: reader.result as string });
-                setAvatarPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+            if (file.size > 10 * 1024 * 1024) return showMessage('error', 'Max size 10MB');
+
+            setLoading(true);
+            try {
+                // Step 1: Get signature
+                const sigResponse = await fetch('/api/upload/signature?folder=lecturers');
+                const sigData = await sigResponse.json();
+
+                if (!sigData.success) throw new Error('Failed to get signature');
+
+                // Step 2: Upload to Cloudinary
+                const formDataValue = new FormData();
+                formDataValue.append('file', file);
+                formDataValue.append('api_key', sigData.apiKey);
+                formDataValue.append('timestamp', sigData.timestamp.toString());
+                formDataValue.append('signature', sigData.signature);
+                formDataValue.append('folder', sigData.folder);
+
+                const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`, {
+                    method: 'POST',
+                    body: formDataValue,
+                });
+
+                const data = await uploadResponse.json();
+                if (uploadResponse.ok) {
+                    let path = data.secure_url;
+                    if (path.includes('res.cloudinary.com')) {
+                        path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+                    }
+                    setFormData({ ...formData, avatar: path });
+                    setAvatarPreview(path);
+                } else {
+                    throw new Error(data.message || 'Avatar upload failed');
+                }
+            } catch (error) {
+                console.error('Avatar upload error:', error);
+                showMessage('error', 'Failed to upload photo');
+            } finally {
+                setLoading(false);
+            }
         }
     };
 

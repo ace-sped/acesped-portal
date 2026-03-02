@@ -266,28 +266,55 @@ export default function UserManagement() {
     setShowDeleteModal(true);
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        showMessage('error', 'Avatar image must be less than 2MB');
+      if (file.size > 10 * 1024 * 1024) {
+        showMessage('error', 'Avatar image must be less than 10MB');
         return;
       }
 
-      // Check file type
       if (!file.type.startsWith('image/')) {
         showMessage('error', 'Please upload an image file');
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setFormData({ ...formData, avatar: base64String });
-        setAvatarPreview(base64String);
-      };
-      reader.readAsDataURL(file);
+      setLoading(true);
+      try {
+        const sigResponse = await fetch('/api/upload/signature?folder=users/avatars');
+        const sigData = await sigResponse.json();
+
+        if (!sigData.success) throw new Error('Failed to get signature');
+
+        const formDataValue = new FormData();
+        formDataValue.append('file', file);
+        formDataValue.append('api_key', sigData.apiKey);
+        formDataValue.append('timestamp', sigData.timestamp.toString());
+        formDataValue.append('signature', sigData.signature);
+        formDataValue.append('folder', sigData.folder);
+
+        const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`, {
+          method: 'POST',
+          body: formDataValue,
+        });
+
+        const data = await uploadResponse.json();
+        if (uploadResponse.ok) {
+          let path = data.secure_url;
+          if (path.includes('res.cloudinary.com')) {
+            path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+          }
+          setFormData({ ...formData, avatar: path });
+          setAvatarPreview(path);
+        } else {
+          throw new Error(data.message || 'Avatar upload failed');
+        }
+      } catch (error) {
+        console.error('Avatar upload error:', error);
+        showMessage('error', 'Failed to upload avatar');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -296,28 +323,55 @@ export default function UserManagement() {
     setAvatarPreview('');
   };
 
-  const handleSignatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSignatureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        showMessage('error', 'Signature image must be less than 2MB');
+      if (file.size > 10 * 1024 * 1024) {
+        showMessage('error', 'Signature image must be less than 10MB');
         return;
       }
 
-      // Check file type
       if (!file.type.startsWith('image/')) {
         showMessage('error', 'Please upload an image file');
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setFormData({ ...formData, signature: base64String });
-        setSignaturePreview(base64String);
-      };
-      reader.readAsDataURL(file);
+      setLoading(true);
+      try {
+        const sigResponse = await fetch('/api/upload/signature?folder=users/signatures');
+        const sigData = await sigResponse.json();
+
+        if (!sigData.success) throw new Error('Failed to get signature');
+
+        const formDataValue = new FormData();
+        formDataValue.append('file', file);
+        formDataValue.append('api_key', sigData.apiKey);
+        formDataValue.append('timestamp', sigData.timestamp.toString());
+        formDataValue.append('signature', sigData.signature);
+        formDataValue.append('folder', sigData.folder);
+
+        const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`, {
+          method: 'POST',
+          body: formDataValue,
+        });
+
+        const data = await uploadResponse.json();
+        if (uploadResponse.ok) {
+          let path = data.secure_url;
+          if (path.includes('res.cloudinary.com')) {
+            path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+          }
+          setFormData({ ...formData, signature: path });
+          setSignaturePreview(path);
+        } else {
+          throw new Error(data.message || 'Signature upload failed');
+        }
+      } catch (error) {
+        console.error('Signature upload error:', error);
+        showMessage('error', 'Failed to upload signature');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

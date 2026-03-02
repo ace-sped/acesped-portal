@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../components/AdminLayout';
-import { 
-  Users, Plus, Search, Edit, Trash2, Eye, 
+import {
+  Users, Plus, Search, Edit, Trash2, Eye,
   X, Check, AlertCircle, Filter, Mail, Phone, Linkedin, Twitter, Award, Upload, Camera, User
 } from 'lucide-react';
 import Image from 'next/image';
@@ -96,7 +96,7 @@ export default function TeamManagement() {
     let filtered = team;
 
     if (searchTerm) {
-      filtered = filtered.filter(member => 
+      filtered = filtered.filter(member =>
         member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         member.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
         member.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -311,27 +311,27 @@ export default function TeamManagement() {
   // Helper function to get image
   const getImage = (imagePath: string | null | undefined): string => {
     if (!imagePath) return '';
-    
+
     // If it's a base64 encoded image (starts with data:image/), return it directly
     if (typeof imagePath === 'string' && imagePath.startsWith('data:image/')) {
       return imagePath;
     }
-    
+
     // If it's a string path starting with /, it's a public path - use it directly
     if (typeof imagePath === 'string' && imagePath.startsWith('/')) {
       return imagePath;
     }
-    
+
     // If it's a full URL (http:// or https://), use it directly
     if (typeof imagePath === 'string' && (imagePath.startsWith('http://') || imagePath.startsWith('https://'))) {
       return imagePath;
     }
-    
+
     // If it's a relative path without leading slash, prepend /
     if (typeof imagePath === 'string' && !imagePath.startsWith('http') && !imagePath.startsWith('data:')) {
       return '/' + imagePath;
     }
-    
+
     // Return as-is for other cases
     return imagePath || '';
   };
@@ -341,16 +341,16 @@ export default function TeamManagement() {
     if (!imageSrc) return false;
     if (typeof imageSrc === 'string') {
       // Base64 images or external URLs need unoptimized
-      return imageSrc.startsWith('data:') || 
-             imageSrc.startsWith('http://') || 
-             imageSrc.startsWith('https://');
+      return imageSrc.startsWith('data:') ||
+        imageSrc.startsWith('http://') ||
+        imageSrc.startsWith('https://');
     }
     return false;
   };
 
-  const handleAvatarUpload = (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      showMessage('error', 'File size must be less than 5MB');
+  const handleAvatarUpload = async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      showMessage('error', 'File size must be less than 10MB');
       return;
     }
 
@@ -359,13 +359,44 @@ export default function TeamManagement() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setFormData({ ...formData, image: base64String });
-      setAvatarPreview(base64String);
-    };
-    reader.readAsDataURL(file);
+    setLoading(true);
+    try {
+      // Step 1: Get signature
+      const sigResponse = await fetch('/api/upload/signature?folder=team');
+      const sigData = await sigResponse.json();
+
+      if (!sigData.success) throw new Error('Failed to get signature');
+
+      // Step 2: Upload to Cloudinary
+      const formDataValue = new FormData();
+      formDataValue.append('file', file);
+      formDataValue.append('api_key', sigData.apiKey);
+      formDataValue.append('timestamp', sigData.timestamp.toString());
+      formDataValue.append('signature', sigData.signature);
+      formDataValue.append('folder', sigData.folder);
+
+      const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`, {
+        method: 'POST',
+        body: formDataValue,
+      });
+
+      const data = await uploadResponse.json();
+      if (uploadResponse.ok) {
+        let path = data.secure_url;
+        if (path.includes('res.cloudinary.com')) {
+          path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+        }
+        setFormData({ ...formData, image: path });
+        setAvatarPreview(path);
+      } else {
+        throw new Error(data.message || 'Avatar upload failed');
+      }
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      showMessage('error', 'Failed to upload avatar');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -396,11 +427,10 @@ export default function TeamManagement() {
         {/* Message */}
         {message && (
           <div
-            className={`mb-6 p-4 rounded-lg flex items-center ${
-              message.type === 'success'
+            className={`mb-6 p-4 rounded-lg flex items-center ${message.type === 'success'
                 ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
                 : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-            }`}
+              }`}
           >
             {message.type === 'success' ? (
               <Check className="h-5 w-5 mr-2" />
@@ -533,11 +563,10 @@ export default function TeamManagement() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            member.isActive
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${member.isActive
                               ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
                               : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
-                          }`}
+                            }`}
                         >
                           {member.isActive ? 'Active' : 'Inactive'}
                         </span>
@@ -594,9 +623,9 @@ export default function TeamManagement() {
                     <div className="relative">
                       {avatarPreview ? (
                         <div className="relative h-32 w-32 rounded-lg overflow-hidden border-2 border-gray-300 dark:border-gray-600">
-                          <Image 
-                            src={avatarPreview} 
-                            alt="Avatar preview" 
+                          <Image
+                            src={avatarPreview}
+                            alt="Avatar preview"
                             fill
                             className="object-cover"
                           />
@@ -1012,9 +1041,9 @@ export default function TeamManagement() {
                       <div className="relative">
                         {avatarPreview ? (
                           <div className="relative h-32 w-32 rounded-lg overflow-hidden border-2 border-gray-300 dark:border-gray-600">
-                            <Image 
-                              src={avatarPreview} 
-                              alt="Avatar preview" 
+                            <Image
+                              src={avatarPreview}
+                              alt="Avatar preview"
                               fill
                               className="object-cover"
                             />

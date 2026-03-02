@@ -127,20 +127,62 @@ export default function SettingsPage() {
 
     };
 
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                showMessage('error', 'Image size must be less than 2MB');
+            if (file.size > 10 * 1024 * 1024) {
+                showMessage('error', 'Image size must be less than 10MB');
                 return;
             }
 
+            // Show local preview immediately
             const reader = new FileReader();
             reader.onloadend = () => {
                 setAvatarPreview(reader.result as string);
                 setShowAvatarSave(true);
             };
             reader.readAsDataURL(file);
+
+            setUpdatingAvatar(true);
+            try {
+                // Step 1: Get signature
+                const sigResponse = await fetch('/api/upload/signature?folder=profiles');
+                const sigData = await sigResponse.json();
+
+                if (!sigData.success) throw new Error('Failed to get signature');
+
+                // Step 2: Upload to Cloudinary
+                const formDataValue = new FormData();
+                formDataValue.append('file', file);
+                formDataValue.append('api_key', sigData.apiKey);
+                formDataValue.append('timestamp', sigData.timestamp.toString());
+                formDataValue.append('signature', sigData.signature);
+                formDataValue.append('folder', sigData.folder);
+
+                const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`, {
+                    method: 'POST',
+                    body: formDataValue,
+                });
+
+                const data = await uploadResponse.json();
+                if (uploadResponse.ok) {
+                    let path = data.secure_url;
+                    if (path.includes('res.cloudinary.com')) {
+                        path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+                    }
+                    setAvatarPreview(path);
+                    setShowAvatarSave(true);
+                } else {
+                    throw new Error(data.message || 'Upload failed');
+                }
+            } catch (error) {
+                console.error('Avatar upload error:', error);
+                showMessage('error', 'Failed to upload profile photo');
+                setAvatarPreview("");
+                setShowAvatarSave(false);
+            } finally {
+                setUpdatingAvatar(false);
+            }
         }
     };
 

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import RoleLayout from '../../components/shared/RoleLayout';
 import { Plus, Search, Filter, Edit, Trash2, Folder, MoreVertical, X, Upload, Calendar, Image as ImageIcon, Video } from 'lucide-react';
+import { compressVideo, type CompressProgress } from '@/lib/video-compress';
 
 // Updated Project interface with image
 interface Project {
@@ -110,6 +111,7 @@ export default function HeadOfInnovationProjects() {
     };
 
     const [uploading, setUploading] = useState<Record<string, boolean>>({});
+    const [compressionStatus, setCompressionStatus] = useState<CompressProgress | null>(null);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video', index?: number) => {
         const file = e.target.files?.[0];
@@ -119,8 +121,6 @@ export default function HeadOfInnovationProjects() {
         const maxSize = 500 * 1024 * 1024; // 500MB
         if (file.size > maxSize) {
             alert('File is too large. Maximum size is 500MB.');
-            // Reset the input value so the user can select the same file again if they want (though it will fail again)
-            // or select a different file.
             e.target.value = '';
             return;
         }
@@ -128,43 +128,84 @@ export default function HeadOfInnovationProjects() {
         const key = type === 'image' ? `image-${index}` : 'video';
         setUploading(prev => ({ ...prev, [key]: true }));
 
-        const formData = new FormData();
-        formData.append('file', file);
-
         try {
-            const response = await fetch('/api/upload/projects', {
+            // For videos, compress client-side first to reduce upload size & prevent timeouts
+            let fileToUpload: File = file;
+            if (type === 'video') {
+                setCompressionStatus({ phase: 'loading', progress: 0, message: 'Preparing video…' });
+                fileToUpload = await compressVideo(file, {
+                    maxWidth: 1280,
+                    maxHeight: 720,
+                    videoBitsPerSecond: 1_500_000,
+                    skipBelowBytes: 20 * 1024 * 1024,
+                    onProgress: (info) => setCompressionStatus(info),
+                });
+                // Clear compression status — switch to upload phase
+                setCompressionStatus(null);
+            }
+
+            // Step 1: Get a signed upload signature from our backend
+            const sigUrl = type === 'video'
+                ? `/api/upload/signature?folder=projects&resourceType=video`
+                : `/api/upload/signature?folder=projects`;
+            const sigResponse = await fetch(sigUrl);
+            const sigData = await sigResponse.json();
+
+            if (!sigData.success) {
+                throw new Error('Failed to get upload signature');
+            }
+
+            // Step 2: Upload directly to Cloudinary from the browser
+            const formData = new FormData();
+            formData.append('file', fileToUpload);
+            formData.append('api_key', sigData.apiKey);
+            formData.append('timestamp', sigData.timestamp.toString());
+            formData.append('signature', sigData.signature);
+            formData.append('folder', sigData.folder);
+
+            // For videos, include the transformation that was signed
+            if (type === 'video' && sigData.transformation) {
+                formData.append('transformation', sigData.transformation);
+            }
+
+            // Use the correct resource_type endpoint for videos vs auto for images
+            const uploadType = type === 'video' ? 'video' : 'auto';
+            const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/${uploadType}/upload`, {
                 method: 'POST',
                 body: formData,
             });
 
-            if (response.ok) {
-                const data = await response.json();
+            if (uploadResponse.ok) {
+                const data = await uploadResponse.json();
+                let path = data.secure_url;
+
+                // Auto-inject optimization parameters (f_auto, q_auto)
+                if (path.includes('res.cloudinary.com') && !path.includes('/raw/upload/')) {
+                    path = path.replace('/upload/', '/upload/f_auto,q_auto/');
+                }
+
                 if (type === 'image' && typeof index === 'number') {
                     const currentImages = newProject.images || [];
                     const newImages = [...currentImages];
-                    newImages[index - 1] = data.path; // index is 1-based from map
+                    newImages[index - 1] = path;
                     setNewProject(prev => ({ ...prev, images: newImages }));
                 } else if (type === 'video') {
-                    setNewProject(prev => ({ ...prev, video: data.path }));
+                    setNewProject(prev => ({ ...prev, video: path }));
                 }
             } else {
-                let errorData;
-                const responseText = await response.text();
-                try {
-                    errorData = JSON.parse(responseText);
-                } catch (e) {
-                    errorData = { message: `Server error: ${response.status} ${response.statusText}`, raw: responseText };
-                }
-                console.error('Upload failed:', errorData);
-                alert(`Upload failed: ${errorData.message || 'Unknown error'}`);
+                const errorText = await uploadResponse.text();
+                let errorData: any = {};
+                try { errorData = JSON.parse(errorText); } catch { errorData = { raw: errorText }; }
+                console.error('Direct upload failed:', uploadResponse.status, errorData);
+                alert(`Upload failed: ${errorData?.error?.message || errorData?.message || `HTTP ${uploadResponse.status}`}`);
             }
         } catch (error) {
-            console.error('Error uploading file:', error);
+            console.error('Error in file upload process:', error);
             alert('Failed to upload file. Please check your connection and try again.');
         } finally {
             setUploading(prev => ({ ...prev, [key]: false }));
-            // Reset input value to allow selecting same file again
-            e.target.value = '';
+            setCompressionStatus(null);
+            if (e.target) e.target.value = '';
         }
     };
 
@@ -368,17 +409,39 @@ export default function HeadOfInnovationProjects() {
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Project Video
                                     </label>
-                                    <div className="w-full h-32 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-700/50 cursor-pointer group relative overflow-hidden">
+                                    <div className="w-full min-h-[8rem] rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-700/50 cursor-pointer group relative overflow-hidden">
                                         <input
                                             type="file"
                                             accept="video/*"
                                             onChange={(e) => handleFileUpload(e, 'video')}
                                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                            disabled={uploading['video']}
                                         />
-                                        {uploading['video'] ? (
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                        {/* Compression in progress */}
+                                        {compressionStatus && compressionStatus.phase !== 'done' && compressionStatus.phase !== 'skipped' ? (
+                                            <div className="flex flex-col items-center justify-center p-4 w-full pointer-events-none">
+                                                <Video className="h-7 w-7 text-indigo-500 mb-2 animate-pulse" />
+                                                <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-2">
+                                                    {compressionStatus.message}
+                                                </span>
+                                                {/* Progress bar */}
+                                                <div className="w-full max-w-xs h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                                                        style={{ width: `${Math.round(compressionStatus.progress * 100)}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-xs text-gray-400 mt-1">
+                                                    {Math.round(compressionStatus.progress * 100)}%
+                                                </span>
+                                            </div>
+                                        ) : uploading['video'] ? (
+                                            <div className="flex flex-col items-center justify-center p-4 pointer-events-none">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+                                                <span className="text-sm text-gray-500 dark:text-gray-400">Uploading to cloud…</span>
+                                            </div>
                                         ) : newProject.video ? (
-                                            <div className="relative w-full h-full bg-black/90 flex items-center justify-center">
+                                            <div className="relative w-full h-32 bg-black/90 flex items-center justify-center">
                                                 <div
                                                     className="absolute top-2 right-2 z-30 cursor-pointer bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md transition-colors"
                                                     onClick={(e) => {
@@ -400,7 +463,7 @@ export default function HeadOfInnovationProjects() {
                                             <div className="text-center group-hover:scale-105 transition-transform duration-200">
                                                 <Video className="h-8 w-8 mx-auto text-gray-400 group-hover:text-indigo-500 mb-2" />
                                                 <span className="text-sm text-gray-500 group-hover:text-indigo-500 font-medium">Upload Project Video</span>
-                                                <p className="text-xs text-gray-400 mt-1">MP4, WebM up to 50MB</p>
+                                                <p className="text-xs text-gray-400 mt-1">MP4, WebM — auto-compressed for fast upload</p>
                                             </div>
                                         )}
                                     </div>
