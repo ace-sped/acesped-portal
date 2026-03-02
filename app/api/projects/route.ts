@@ -13,7 +13,7 @@ export async function GET(req: Request) {
         // If access code is provided, validate it and filter projects
         if (accessCode) {
             const projectIds = await validateAccessCode(accessCode);
-            
+
             if (!projectIds) {
                 return NextResponse.json([]);
             }
@@ -26,7 +26,10 @@ export async function GET(req: Request) {
 
         const dbProjects = await prisma.project.findMany({
             where,
-            orderBy: { createdAt: 'desc' },
+            orderBy: [
+                { displayOrder: 'asc' },
+                { title: 'asc' },
+            ],
         });
 
         // Current date for status calculation
@@ -46,7 +49,7 @@ export async function GET(req: Request) {
                 area: 'Innovation', // Mock value
                 imageSrc: p.images && p.images.length > 0 ? p.images[0] : '/images/lab.jpg', // Fallback image
                 subImages: p.images && p.images.length > 1 ? p.images.slice(1) : [],
-                isProtected: !!p.accessCode,
+                isProtected: !!(p.accessCode),
             };
         });
 

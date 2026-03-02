@@ -15,7 +15,8 @@ interface Project {
     image?: string;
     images?: string[];
     video?: string;
-    accessCode?: string;
+    displayOrder?: number;
+    accessCode?: string | null;
 }
 
 export default function HeadOfInnovationProjects() {
@@ -87,7 +88,8 @@ export default function HeadOfInnovationProjects() {
             dueDate: project.dueDate.split('T')[0], // Extract date part for input type="date"
             images: project.images || (project.image ? [project.image] : []),
             video: project.video,
-            accessCode: project.accessCode
+            displayOrder: project.displayOrder ?? 0,
+            accessCode: project.accessCode ?? undefined,
         });
         setEditId(project.id);
         setIsEditing(true);
@@ -276,7 +278,7 @@ export default function HeadOfInnovationProjects() {
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lead</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Due Date</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Access Code</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Order</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                         </thead>
@@ -313,13 +315,9 @@ export default function HeadOfInnovationProjects() {
                                         {new Date(project.dueDate).toLocaleDateString('en-GB')}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                                        {project.accessCode ? (
-                                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-mono text-xs">
-                                                {project.accessCode}
-                                            </span>
-                                        ) : (
-                                            <span className="text-gray-300 dark:text-gray-600 italic">None</span>
-                                        )}
+                                        <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-mono text-xs">
+                                            {project.displayOrder ?? 0}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
@@ -514,15 +512,32 @@ export default function HeadOfInnovationProjects() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Access Code
+                                        Display Order
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={newProject.displayOrder ?? 0}
+                                        onChange={(e) => setNewProject({ ...newProject, displayOrder: parseInt(e.target.value) || 0 })}
+                                        className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                                        placeholder="0"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Access Code (optional)
                                     </label>
                                     <input
                                         type="text"
-                                        value={newProject.accessCode || ''}
-                                        onChange={(e) => setNewProject({ ...newProject, accessCode: e.target.value })}
+                                        value={newProject.accessCode ?? ''}
+                                        onChange={(e) => setNewProject({ ...newProject, accessCode: e.target.value || undefined })}
                                         className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
-                                        placeholder="Optional access code"
+                                        placeholder="Leave empty for no per-project code"
                                     />
+                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        When set, this project is shown as protected and can use this code (or global access codes that include it).
+                                    </p>
                                 </div>
 
                                 <div>

@@ -781,17 +781,19 @@ model SystemSetting {
 }
 
 model Project {
-  id          String    @id @default(cuid())
-  title       String
-  description String?   @db.Text
-  lead        String
-  dueDate     DateTime
-  images      String[]
-  video       String?
-  accessCode  String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String   @id @default(cuid())
+  title        String
+  description  String?  @db.Text
+  lead         String
+  dueDate      DateTime
+  images       String[]
+  video        String?
+  displayOrder Int      @default(0)
+  accessCode   String?  // Optional per-project access code; when set, project is protected
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
+  @@index([displayOrder])
   @@map("projects")
 }
 

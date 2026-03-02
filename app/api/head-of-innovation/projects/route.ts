@@ -4,7 +4,10 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
     try {
         const projects = await prisma.project.findMany({
-            orderBy: { createdAt: 'desc' },
+            orderBy: [
+                { displayOrder: 'asc' },
+                { title: 'asc' },
+            ],
         });
         return NextResponse.json(projects);
     } catch (error) {
@@ -19,7 +22,7 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { title, description, lead, dueDate, images, video, accessCode } = body;
+        const { title, description, lead, dueDate, images, video, displayOrder, accessCode } = body;
 
         const project = await prisma.project.create({
             data: {
@@ -29,8 +32,8 @@ export async function POST(req: Request) {
                 dueDate: new Date(dueDate),
                 images: images || [],
                 video: video || null,
-                accessCode: accessCode || null,
-                // use defaults for status and progress
+                displayOrder: displayOrder ?? 0,
+                accessCode: accessCode === '' || accessCode == null ? null : String(accessCode),
             },
         });
 
