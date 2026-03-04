@@ -88,19 +88,73 @@ export default function OurTeamPage() {
     }
   };
 
-  const filteredMembers = teamMembers.filter(member => {
-    const matchesCategory = selectedCategory === 'ALL' || member.role === selectedCategory;
-    const matchesSearch = 
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (member.department && member.department.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      member.bio.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredMembers = teamMembers
+    .filter(member => {
+      const matchesCategory = selectedCategory === 'ALL' || member.role === selectedCategory;
+      const matchesSearch =
+        member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        member.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (member.department && member.department.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        member.bio.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .sort((a, b) => {
+      const aIsCenterLeader = /center leader|director/i.test(a.title || '');
+      const bIsCenterLeader = /center leader|director/i.test(b.title || '');
+      if (aIsCenterLeader && !bIsCenterLeader) return -1;
+      if (!aIsCenterLeader && bIsCenterLeader) return 1;
+      return 0;
+    });
+
+  const isCenterLeader = (member: TeamMember) => /center leader|director/i.test(member.title || '');
+  const centerLeader = filteredMembers.find(isCenterLeader);
+  const restMembers = centerLeader
+    ? filteredMembers.filter(m => m.id !== centerLeader.id)
+    : filteredMembers;
 
   const getCategoryIcon = (categoryId: string) => {
     const category = teamCategories.find(cat => cat.id === categoryId);
     return category?.icon || Users;
+  };
+
+  const renderMemberCard = (member: TeamMember, className = '', showFullImage = false) => {
+    const CategoryIcon = getCategoryIcon(member.role);
+    return (
+      <div
+        key={member.id}
+        onClick={() => router.push(`/about/team/${member.slug}`)}
+        className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 group cursor-pointer ${className}`}
+      >
+        <div className={`relative bg-gradient-to-br from-green-500 to-emerald-500 overflow-hidden ${showFullImage ? 'aspect-[4/5] max-h-72' : 'h-64'}`}>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <User className="h-32 w-32 text-white/20" />
+          </div>
+          {member.image && getImage(member.image) ? (
+            <Image
+              src={getImage(member.image)}
+              alt={member.name}
+              fill
+              className={`w-full h-full group-hover:scale-105 transition-transform duration-300 ${showFullImage ? 'object-contain' : 'object-cover'}`}
+              unoptimized={isUnoptimizedImage(member.image)}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <User className="h-24 w-24 text-white/40" />
+            </div>
+          )}
+          <div className="absolute bottom-4 left-4">
+            <span className="inline-flex items-center px-3 py-1 bg-white/90 dark:bg-gray-800/90 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
+              <CategoryIcon className="h-3 w-3 mr-1" />
+              {member.role}
+            </span>
+          </div>
+        </div>
+        <div className="p-2 text-center">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{member.name}</h3>
+          <p className="text-green-600 dark:text-green-400 font-semibold mb-2">{member.title}</p>
+        </div>
+      </div>
+    );
   };
 
   // Helper function to get image
@@ -223,54 +277,20 @@ export default function OurTeamPage() {
                   Try adjusting your search or filter criteria
                 </p>
               </div>
+            ) : centerLeader ? (
+              <>
+                <div className="flex justify-center">
+                  <div className="w-full max-w-sm">
+                    {renderMemberCard(centerLeader)}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-8">
+                  {restMembers.map((member) => renderMemberCard(member))}
+                </div>
+              </>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {filteredMembers.map((member) => {
-                  const CategoryIcon = getCategoryIcon(member.role);
-                  return (
-                    <div
-                      key={member.id}
-                      onClick={() => router.push(`/about/team/${member.slug}`)}
-                      className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 group cursor-pointer"
-                    >
-                      {/* Member Image */}
-                      <div className="relative h-64 bg-gradient-to-br from-green-500 to-emerald-500 overflow-hidden">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <User className="h-32 w-32 text-white/20" />
-                        </div>
-                        {member.image && getImage(member.image) ? (
-                          <Image
-                            src={getImage(member.image)}
-                            alt={member.name}
-                            fill
-                            className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
-                            unoptimized={isUnoptimizedImage(member.image)}
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <User className="h-24 w-24 text-white/40" />
-                          </div>
-                        )}
-                        <div className="absolute bottom-4 left-4">
-                          <span className="inline-flex items-center px-3 py-1 bg-white/90 dark:bg-gray-800/90 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
-                            <CategoryIcon className="h-3 w-3 mr-1" />
-                            {member.role}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Member Info */}
-                      <div className="p-2 text-center">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                          {member.name}
-                        </h3>
-                        <p className="text-green-600 dark:text-green-400 font-semibold mb-2">
-                          {member.title}
-                        </p> 
-                      </div>
-                    </div>
-                  );
-                })}
+                {filteredMembers.map((member) => renderMemberCard(member))}
               </div>
             )}
           </div>

@@ -155,7 +155,7 @@ export default function TeamManagement() {
         fetchTeam();
         resetForm();
       } else {
-        showMessage('error', data.message || 'Failed to create team member');
+        showMessage('error', data.message || data.error || 'Failed to create team member');
       }
     } catch (error) {
       showMessage('error', 'Error creating team member');
@@ -735,11 +735,10 @@ export default function TeamManagement() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Email *
+                      Email
                     </label>
                     <input
                       type="email"
-                      required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -815,7 +814,7 @@ export default function TeamManagement() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Qualifications *
+                    Qualifications
                   </label>
                   <div className="flex gap-2 mb-2">
                     <input
@@ -1012,11 +1011,10 @@ export default function TeamManagement() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Email *
+                      Email
                     </label>
                     <input
                       type="email"
-                      required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -1139,7 +1137,7 @@ export default function TeamManagement() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Qualifications *
+                    Qualifications
                   </label>
                   <div className="flex gap-2 mb-2">
                     <input

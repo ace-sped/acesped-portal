@@ -74,10 +74,15 @@ export async function POST(request: NextRequest) {
     // TODO: Add authentication check for SUPER_ADMIN or Center_Leader role
 
     const body = await request.json();
+    const rawTitle = typeof body.title === 'string' ? body.title.trim() : '';
+    const rawSlug = typeof body.slug === 'string' ? body.slug.trim() : '';
+    const rawOverview = typeof body.overview === 'string' ? body.overview.trim() : '';
+    const programId = typeof body.programId === 'string' ? body.programId.trim() : '';
+    const title = rawTitle || null;
+    const slug = rawSlug || null;
+    const overview = rawOverview || null;
+
     const {
-      title,
-      slug,
-      programId,
       isActive,
       displayOrder,
       courseCode,
@@ -85,13 +90,18 @@ export async function POST(request: NextRequest) {
       programType,
       semester,
       creditHours,
-      overview,
     } = body;
 
-    // Validate required fields
-    if (!title || !slug || !programId || !overview) {
+    // Validate required fields and return specific error
+    const missing: string[] = [];
+    if (!title) missing.push('title');
+    if (!slug) missing.push('slug');
+    if (!programId) missing.push('program');
+    if (!overview) missing.push('description');
+    if (missing.length > 0) {
+      console.warn('[POST /api/admin/courses] 400 - Missing fields:', missing);
       return NextResponse.json(
-        { success: false, message: 'Title, slug, programId, and overview are required' },
+        { success: false, message: `Missing: ${missing.join(', ')}`, details: { missing } },
         { status: 400 }
       );
     }
@@ -102,8 +112,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!program) {
+      console.warn('[POST /api/admin/courses] 400 - Program not found:', programId);
       return NextResponse.json(
-        { success: false, message: 'Program not found' },
+        { success: false, message: `Program not found for ID: ${programId}` },
         { status: 400 }
       );
     }
@@ -114,11 +125,21 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingCourse) {
+      console.warn('[POST /api/admin/courses] 400 - Duplicate slug:', slug);
       return NextResponse.json(
-        { success: false, message: 'Course with this slug already exists' },
+        { success: false, message: `Course slug "${slug}" already exists` },
         { status: 400 }
       );
     }
+
+    // Parse creditHours safely (avoid NaN)
+    const parsedCreditHours =
+      creditHours != null && creditHours !== ''
+        ? (() => {
+            const n = parseInt(String(creditHours), 10);
+            return Number.isNaN(n) ? null : n;
+          })()
+        : null;
 
     // Create course
     const course = await prisma.course.create({
@@ -133,7 +154,7 @@ export async function POST(request: NextRequest) {
         courseType: courseType || null,
         programType: programType || null,
         semester: semester || null,
-        creditHours: creditHours ? parseInt(creditHours) : null,
+        creditHours: parsedCreditHours,
       },
       include: {
         program: {

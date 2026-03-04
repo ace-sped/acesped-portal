@@ -14,6 +14,7 @@ export default function HeadOfInnovationDashboard() {
             <RoleDashboard
                 roleDisplayName="Head of Innovation"
                 roleColor="indigo"
+                statsEndpoint="/api/head-of-innovation/stats"
                 customStatLabels={{
                     totalUsers: 'Total Projects',
                     activeUsers: 'Live Projects',

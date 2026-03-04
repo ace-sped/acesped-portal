@@ -813,3 +813,37 @@ model ProjectAccessCode {
   @@map("project_access_codes")
 }
 
+enum DliType {
+  report
+  assessment
+  policy
+  framework
+  guideline
+  milestone
+}
+
+model Dli {
+  id        String    @id @default(cuid())
+  title     String
+  type      DliType
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  files     DliFile[]
+
+  @@index([type])
+  @@index([createdAt])
+  @@map("dlis")
+}
+
+model DliFile {
+  id         String   @id @default(cuid())
+  dliId      String
+  dli        Dli      @relation(fields: [dliId], references: [id], onDelete: Cascade)
+  url        String
+  fileLabel  String?
+  createdAt  DateTime @default(now())
+
+  @@index([dliId])
+  @@map("dli_files")
+}
+

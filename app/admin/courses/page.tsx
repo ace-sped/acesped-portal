@@ -165,15 +165,29 @@ export default function CoursesManagement() {
 
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
+    const title = formData.title.trim();
+    const overview = formData.overview.trim();
+    const slug = (formData.slug || generateSlug(formData.title)).trim() || generateSlug(title);
+
+    if (!title || !overview || !formData.programId) {
+      showMessage('error', 'Please fill in course title, program, and description');
+      return;
+    }
+    if (!slug) {
+      showMessage('error', 'Please enter a valid course title to generate the slug');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const slug = formData.slug || generateSlug(formData.title);
       const response = await fetch('/api/admin/courses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
+          title,
+          overview,
           slug,
         }),
       });
@@ -434,6 +448,10 @@ export default function CoursesManagement() {
             </button>
             <button
               onClick={() => {
+                if (programs.length === 0) {
+                  showMessage('error', 'No programs available. Please create a program first.');
+                  return;
+                }
                 resetForm();
                 setShowCreateModal(true);
               }}

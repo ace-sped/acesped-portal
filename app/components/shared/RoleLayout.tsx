@@ -239,6 +239,13 @@ export default function RoleLayout({ children, rolePath, roleDisplayName, roleCo
       }
     }
 
+    // ICT: always show DLIs (read-only list at /ict/dlis)
+    if (rolePath === 'ict' && !navItems.some(item => item.name === 'DLIs')) {
+      const dashboardIndex = navItems.findIndex(item => item.name === 'Dashboard');
+      const insertIndex = dashboardIndex !== -1 ? dashboardIndex + 1 : 0;
+      navItems.splice(insertIndex, 0, { name: 'DLIs', href: `/${rolePath}/dlis`, icon: FileText });
+    }
+
     navigation = navItems;
   } else {
     navigation = [
@@ -252,6 +259,10 @@ export default function RoleLayout({ children, rolePath, roleDisplayName, roleCo
 
     if (rolePath === 'head-of-innovation') {
       navigation.splice(1, 0, { name: 'Manage Projects', href: `/${rolePath}/projects`, icon: BookOpen });
+    }
+
+    if (rolePath === 'ict') {
+      navigation.splice(1, 0, { name: 'DLIs', href: `/${rolePath}/dlis`, icon: FileText });
     }
 
     if (rolePath === 'head-of-program') {

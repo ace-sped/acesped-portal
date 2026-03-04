@@ -64,10 +64,10 @@ export async function POST(request: NextRequest) {
       displayOrder,
     } = body;
 
-    // Validate required fields
-    if (!name || !slug || !role || !title || !email || !image || !bio || !qualifications) {
+    // Validate required fields (email and qualifications are optional)
+    if (!name || !slug || !role || !title || !image || !bio) {
       return NextResponse.json(
-        { success: false, message: 'Name, slug, role, title, email, image, bio, and qualifications are required' },
+        { success: false, message: 'Name, slug, role, title, image, and bio are required' },
         { status: 400 }
       );
     }
@@ -92,11 +92,11 @@ export async function POST(request: NextRequest) {
         role: role as TeamRole,
         title,
         department: department || null,
-        email,
+        email: email || '',
         phone: phone || null,
         image,
         bio,
-        qualifications: qualifications || [],
+        qualifications: Array.isArray(qualifications) ? qualifications : [],
         researchAreas: researchAreas || null,
         linkedin: linkedin || null,
         twitter: twitter || null,

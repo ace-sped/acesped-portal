@@ -120,7 +120,7 @@ export default function Navbar() {
   const aboutDropdown = [
     { name: 'About Us', href: '/about', onClick: () => router.push('/about') },
     { name: 'Ace-SPED Laboratories', href: '/about/laboratories', onClick: () => router.push('/about/laboratories') },
-    { name: 'DLIs', href: '/about/dis', onClick: () => router.push('/about/dis') },
+    { name: 'DLIs', href: '/about/dli', onClick: () => router.push('/about/dli') },
     { name: 'Our Team', href: '/about/team', onClick: () => router.push('/about/team') },
   ];
 
