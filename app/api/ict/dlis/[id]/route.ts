@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { DliType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 function toMilestoneShape(dli: { id: string; title: string; type: string; files: { url: string; fileLabel: string | null }[] }) {
@@ -46,11 +47,11 @@ export async function PUT(
     const body = await req.json();
     const { title, type, files: filesPayload } = body;
 
-    const validTypes = ['report', 'assessment', 'policy', 'framework', 'guideline', 'milestone'];
+    const validTypes: DliType[] = ['report', 'assessment', 'policy', 'framework', 'guideline', 'milestone'];
     const typeStr = type != null ? String(type).toLowerCase() : undefined;
-    const dliType = typeStr && validTypes.includes(typeStr) ? typeStr : undefined;
+    const dliType: DliType | undefined = typeStr && validTypes.includes(typeStr as DliType) ? (typeStr as DliType) : undefined;
 
-    const updateData: { title?: string; type?: string } = {};
+    const updateData: { title?: string; type?: DliType } = {};
     if (title !== undefined) updateData.title = String(title).trim();
     if (dliType !== undefined) updateData.type = dliType;
 
