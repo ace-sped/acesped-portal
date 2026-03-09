@@ -70,7 +70,7 @@ export async function PUT(
       data: {
         ...(title !== undefined ? { title: String(title).trim() } : {}),
         ...(dliType !== undefined ? { type: dliType } : {}),
-      } as Prisma.DliUpdateInput,
+      } as unknown as Prisma.DliUpdateInput,
       include: { files: true },
     });
 
