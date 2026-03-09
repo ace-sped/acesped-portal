@@ -51,11 +51,6 @@ export async function PUT(
     const typeStr = type != null ? String(type).toLowerCase() : undefined;
     const dliType: DliType | undefined = typeStr && validTypes.includes(typeStr as DliType) ? (typeStr as DliType) : undefined;
 
-    const updateData: Prisma.DliUpdateInput = {
-      ...(title !== undefined ? { title: String(title).trim() } : {}),
-      ...(dliType !== undefined ? { type: dliType } : {}),
-    } as Prisma.DliUpdateInput;
-
     if (filesPayload !== undefined && Array.isArray(filesPayload)) {
       await prisma.dliFile.deleteMany({ where: { dliId: id } });
       const filesToCreate = filesPayload
@@ -72,7 +67,10 @@ export async function PUT(
 
     const dli = await prisma.dli.update({
       where: { id },
-      data: updateData as Prisma.DliUpdateInput,
+      data: {
+        ...(title !== undefined ? { title: String(title).trim() } : {}),
+        ...(dliType !== undefined ? { type: dliType } : {}),
+      } as Prisma.DliUpdateInput,
       include: { files: true },
     });
 
