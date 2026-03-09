@@ -72,7 +72,7 @@ export async function PUT(
 
     const dli = await prisma.dli.update({
       where: { id },
-      data: updateData,
+      data: updateData as Prisma.DliUpdateInput,
       include: { files: true },
     });
 
