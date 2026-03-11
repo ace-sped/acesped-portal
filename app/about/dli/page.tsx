@@ -59,7 +59,7 @@ export default function DLIPage() {
         const data = await res.json();
         if (Array.isArray(data)) {
           setDocuments(
-            data.map((d: { id: string; title: string; type: string; documentUrl?: string; fileLabel?: string; files?: { url: string; fileLabel?: string }[] }) => ({
+            data.map((d: { id: string; title: string; type: DocType; documentUrl?: string; fileLabel?: string; files?: { url: string; fileLabel?: string }[] }) => ({
               id: d.id,
               title: d.title,
               type: d.type,
@@ -164,54 +164,54 @@ export default function DLIPage() {
                 <p>No milestone documents available yet.</p>
               </div>
             ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {documents.map((doc) => {
-                const config = dliTypeConfig[doc.type as DocType];
-                const TypeIcon = config.icon;
-                const fileCount = doc.files?.length ?? (doc.documentUrl && doc.documentUrl !== '#' ? 1 : 0);
-                return (
-                  <article
-                    key={doc.id}
-                    className="group bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl hover:border-green-200 dark:hover:border-green-800 transition-all duration-200 flex flex-col h-full"
-                  >
-                    <div className="p-5 flex-1 flex flex-col min-h-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}
-                        >
-                          <TypeIcon className="h-3.5 w-3.5 shrink-0" />
-                          {config.label}
-                        </span>
-                        {fileCount > 0 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-gray-500 dark:text-gray-400">
-                            {fileCount} {fileCount === 1 ? 'doc' : 'docs'}
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {documents.map((doc) => {
+                  const config = dliTypeConfig[doc.type as DocType];
+                  const TypeIcon = config.icon;
+                  const fileCount = doc.files?.length ?? (doc.documentUrl && doc.documentUrl !== '#' ? 1 : 0);
+                  return (
+                    <article
+                      key={doc.id}
+                      className="group bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl hover:border-green-200 dark:hover:border-green-800 transition-all duration-200 flex flex-col h-full"
+                    >
+                      <div className="p-5 flex-1 flex flex-col min-h-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}
+                          >
+                            <TypeIcon className="h-3.5 w-3.5 shrink-0" />
+                            {config.label}
                           </span>
+                          {fileCount > 0 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-gray-500 dark:text-gray-400">
+                              {fileCount} {fileCount === 1 ? 'doc' : 'docs'}
+                            </span>
+                          )}
+                        </div>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 leading-snug">
+                          {doc.title}
+                        </h2>
+                        {doc.description ? (
+                          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed flex-1 mb-4 line-clamp-2">
+                            {doc.description}
+                          </p>
+                        ) : (
+                          <div className="flex-1 min-h-[2.5rem]" />
                         )}
+                        <div className="pt-4 mt-auto border-t border-gray-100 dark:border-gray-700">
+                          <Link
+                            href={`/about/dli/${doc.id}`}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 w-full justify-center group-hover:gap-3 transition-all duration-200"
+                          >
+                            Explore
+                            <ChevronRight className="h-4 w-4 shrink-0" />
+                          </Link>
+                        </div>
                       </div>
-                      <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 leading-snug">
-                        {doc.title}
-                      </h2>
-                      {doc.description ? (
-                        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed flex-1 mb-4 line-clamp-2">
-                          {doc.description}
-                        </p>
-                      ) : (
-                        <div className="flex-1 min-h-[2.5rem]" />
-                      )}
-                      <div className="pt-4 mt-auto border-t border-gray-100 dark:border-gray-700">
-                        <Link
-                          href={`/about/dli/${doc.id}`}
-                          className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 w-full justify-center group-hover:gap-3 transition-all duration-200"
-                        >
-                          Explore
-                          <ChevronRight className="h-4 w-4 shrink-0" />
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+                    </article>
+                  );
+                })}
+              </div>
             )}
           </div>
         </section>
