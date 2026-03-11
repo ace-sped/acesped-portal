@@ -64,14 +64,14 @@ export default function ProjectsPage() {
 
         const verifyData = await verifyResponse.json();
 
-        if (!verifyResponse.ok || !verifyData.valid) {
-          // Access code is invalid or expired
+        if (!verifyResponse.ok || !verifyData.valid || verifyData.accessType !== 'projects') {
           sessionStorage.removeItem('project_access_code');
+          sessionStorage.removeItem('project_access_type');
           router.push('/access');
           return;
         }
 
-        // Access code is valid - fetch ALL projects
+        // Access code is valid for projects - fetch ALL projects
         const projectsResponse = await fetch('/api/projects');
         
         if (projectsResponse.ok) {
@@ -125,6 +125,7 @@ export default function ProjectsPage() {
 
   const handleSignOut = () => {
     sessionStorage.removeItem('project_access_code');
+    sessionStorage.removeItem('project_access_type');
     router.push('/access');
   };
 

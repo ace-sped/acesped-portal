@@ -7,7 +7,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 
-export type DocType = 'report' | 'assessment' | 'policy' | 'framework' | 'guideline';
+export type DocType = 'report' | 'assessment' | 'policy' | 'framework' | 'guideline' | 'milestone';
 
 export interface DliFile {
   url: string;
@@ -129,5 +129,10 @@ export const dliTypeConfig: Record<
     label: 'Guideline',
     icon: CheckCircle2,
     color: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
+  },
+  milestone: {
+    label: 'Milestone',
+    icon: FileText,
+    color: 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300',
   },
 };

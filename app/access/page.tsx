@@ -33,11 +33,15 @@ export default function AccessCodePage() {
       const data = await response.json();
 
       if (response.ok && data.valid) {
-        // Access code is valid - store it and redirect
-        sessionStorage.setItem('project_access_code', accessCode.trim());
-        
-        // Redirect to projects page
-        router.push('/projects');
+        const code = accessCode.trim();
+        sessionStorage.setItem('project_access_code', code);
+        const accessType = data.accessType ?? 'projects';
+        sessionStorage.setItem('project_access_type', accessType);
+        if (accessType === 'dli') {
+          router.push('/about/dli');
+        } else {
+          router.push('/projects');
+        }
       } else {
         // Access code is invalid
         setError(data.error || 'Invalid access code. Please try again.');

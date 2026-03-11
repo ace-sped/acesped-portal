@@ -45,15 +45,31 @@ export default function ICTDLIsPage() {
   }, []);
   const [editForm, setEditForm] = useState<{ title: string; type: DocType }>({ title: '', type: 'report' });
   const [editFiles, setEditFiles] = useState<{ url: string; fileLabel?: string }[]>([]);
+  const [editUploadRows, setEditUploadRows] = useState<UploadRow[]>([]);
 
   const handleEditDli = (doc: MilestoneDocument) => {
     setEditingId(doc.id);
     setEditForm({ title: doc.title, type: doc.type as DocType });
     setEditFiles(doc.files ?? [{ url: doc.documentUrl, fileLabel: doc.fileLabel }]);
+    setEditUploadRows([createUploadRow()]);
   };
 
   const handleRemoveEditFile = (index: number) => {
     setEditFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addEditUploadRow = () => {
+    setEditUploadRows((prev) => [createUploadRow(), ...prev]);
+  };
+
+  const removeEditUploadRow = (id: string) => {
+    setEditUploadRows((prev) => (prev.length > 1 ? prev.filter((r) => r.id !== id) : prev));
+  };
+
+  const updateEditUploadRow = (id: string, updates: Partial<UploadRow>) => {
+    setEditUploadRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
+    );
   };
 
   const [savingEdit, setSavingEdit] = useState(false);
@@ -63,13 +79,32 @@ export default function ICTDLIsPage() {
     if (!editingId || !editForm.title.trim()) return;
     setSavingEdit(true);
     try {
+      const rowsWithFile = editUploadRows.filter((r) => r.file);
+      let newFilesPayload: { url: string; fileLabel?: string }[] = [];
+
+      if (rowsWithFile.length > 0) {
+        for (const row of rowsWithFile) {
+          const formData = new FormData();
+          formData.append('file', row.file!);
+
+          const uploadResponse = await fetch('/api/upload/dli', { method: 'POST', body: formData });
+          const data = await uploadResponse.json();
+
+          if (!uploadResponse.ok || !data.success) {
+            throw new Error(data.message || 'Upload failed');
+          }
+          newFilesPayload.push({ url: data.path, fileLabel: row.fileLabel || undefined });
+        }
+      }
+
+      const allFiles = [...editFiles, ...newFilesPayload];
       const res = await fetch(`/api/ict/dlis/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: editForm.title.trim(),
           type: editForm.type,
-          files: editFiles,
+          files: allFiles,
         }),
       });
       if (res.ok) {
@@ -82,7 +117,7 @@ export default function ICTDLIsPage() {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to update DLI');
+      alert(err instanceof Error ? err.message : 'Failed to update DLI');
     } finally {
       setSavingEdit(false);
     }
@@ -135,28 +170,16 @@ export default function ICTDLIsPage() {
       setUploading(true);
       try {
         for (const row of rowsWithFile) {
-          const sigResponse = await fetch('/api/upload/signature?folder=dli');
-          const sigData = await sigResponse.json();
-          if (!sigData.success) throw new Error('Failed to get upload signature');
-
           const formData = new FormData();
           formData.append('file', row.file!);
-          formData.append('api_key', sigData.apiKey);
-          formData.append('timestamp', sigData.timestamp.toString());
-          formData.append('signature', sigData.signature);
-          formData.append('folder', sigData.folder);
 
-          const uploadResponse = await fetch(
-            `https://api.cloudinary.com/v1_1/${sigData.cloudName}/auto/upload`,
-            { method: 'POST', body: formData }
-          );
-
-          if (!uploadResponse.ok) {
-            const err = await uploadResponse.json().catch(() => ({}));
-            throw new Error(err?.error?.message || 'Upload failed');
-          }
+          const uploadResponse = await fetch('/api/upload/dli', { method: 'POST', body: formData });
           const data = await uploadResponse.json();
-          filesPayload.push({ url: data.secure_url, fileLabel: row.fileLabel || undefined });
+
+          if (!uploadResponse.ok || !data.success) {
+            throw new Error(data.message || 'Upload failed');
+          }
+          filesPayload.push({ url: data.path, fileLabel: row.fileLabel || undefined });
         }
       } catch (err) {
         console.error(err);
@@ -439,6 +462,81 @@ export default function ICTDLIsPage() {
                       ))}
                     </div>
                   )}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Add more documents
+                    </label>
+                    <button
+                      type="button"
+                      onClick={addEditUploadRow}
+                      className="inline-flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                      title="Add another document"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add document
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {editUploadRows.map((row) => (
+                      <div
+                        key={row.id}
+                        className="flex gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
+                      >
+                        <div className="flex-1 min-w-0 grid grid-cols-2 gap-4">
+                          <div>
+                            <span className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">File</span>
+                            <label className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors min-h-[2.5rem]">
+                              <Upload className="h-4 w-4 text-gray-500" />
+                              <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                                {row.file
+                                  ? (() => {
+                                      const ext = row.file.name.split('.').pop();
+                                      return ext ? `.${ext}` : 'file';
+                                    })()
+                                  : 'Choose file'}
+                              </span>
+                              <input
+                                type="file"
+                                className="sr-only"
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,image/*"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  updateEditUploadRow(row.id, {
+                                    file: f || null,
+                                    fileLabel: f ? f.name : '',
+                                  });
+                                  if (e.target) e.target.value = '';
+                                }}
+                              />
+                            </label>
+                          </div>
+                          <div>
+                            <span className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">File label</span>
+                            <input
+                              type="text"
+                              value={row.fileLabel}
+                              onChange={(e) => updateEditUploadRow(row.id, { fileLabel: e.target.value })}
+                              placeholder="Optional label"
+                              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400"
+                            />
+                          </div>
+                        </div>
+                        {editUploadRows.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeEditUploadRow(row.id)}
+                            className="p-2 h-fit text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg shrink-0"
+                            title="Remove"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
