@@ -59,17 +59,17 @@ export default function DLIPage() {
         const data = await res.json();
         if (Array.isArray(data)) {
           setDocuments(
-            data.map((d: { id: string; title: string; type: DocType; documentUrl?: string; fileLabel?: string; files?: { url: string; fileLabel?: string }[] }) => ({
+            data.map((d: any) => ({
               id: d.id,
               title: d.title,
-              type: d.type,
+              type: d.type as DocType,
               documentUrl: d.documentUrl ?? '#',
               fileLabel: d.fileLabel,
               files: d.files?.length ? d.files : [{ url: d.documentUrl ?? '#', fileLabel: d.fileLabel }],
               description: '',
               phase: undefined,
               date: undefined,
-            }))
+            } as MilestoneDocument))
           );
         } else {
           setDocuments([]);

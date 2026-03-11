@@ -30,7 +30,7 @@ export default function ICTDLIsPage() {
       const res = await fetch('/api/ict/dlis');
       if (res.ok) {
         const data = await res.json();
-        setDocuments(data);
+        setDocuments(data as MilestoneDocument[]);
       }
     } catch (err) {
       console.error('Failed to fetch DLIs:', err);
@@ -109,7 +109,7 @@ export default function ICTDLIsPage() {
       });
       if (res.ok) {
         const updated = await res.json();
-        setDocuments((prev) => prev.map((d) => (d.id === editingId ? updated : d)));
+        setDocuments((prev) => prev.map((d) => (d.id === editingId ? (updated as MilestoneDocument) : d)));
         setEditingId(null);
       } else {
         const err = await res.json().catch(() => ({}));
@@ -203,7 +203,7 @@ export default function ICTDLIsPage() {
       });
       if (res.ok) {
         const doc = await res.json();
-        setDocuments((prev) => [doc, ...prev]);
+        setDocuments((prev) => [(doc as MilestoneDocument), ...prev]);
         setNewDli({ title: '', type: 'report' });
         setUploadRows([createUploadRow()]);
         setShowAddModal(false);
@@ -310,9 +310,9 @@ export default function ICTDLIsPage() {
                               <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
                                 {row.file
                                   ? (() => {
-                                      const ext = row.file.name.split('.').pop();
-                                      return ext ? `.${ext}` : 'file';
-                                    })()
+                                    const ext = row.file.name.split('.').pop();
+                                    return ext ? `.${ext}` : 'file';
+                                  })()
                                   : 'Choose file'}
                               </span>
                               <input
@@ -493,9 +493,9 @@ export default function ICTDLIsPage() {
                               <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
                                 {row.file
                                   ? (() => {
-                                      const ext = row.file.name.split('.').pop();
-                                      return ext ? `.${ext}` : 'file';
-                                    })()
+                                    const ext = row.file.name.split('.').pop();
+                                    return ext ? `.${ext}` : 'file';
+                                  })()
                                   : 'Choose file'}
                               </span>
                               <input
@@ -567,63 +567,63 @@ export default function ICTDLIsPage() {
               <p className="mt-2">Loading DLIs...</p>
             </div>
           ) : (
-          <>
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Title
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {documents.map((doc) => (
-                <tr
-                  key={doc.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-                >
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                    {doc.title}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {dliTypeConfig[doc.type as DocType].label}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="inline-flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleEditDli(doc)}
-                        className="p-2 text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteDli(doc.id)}
-                        className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {documents.length === 0 && (
-            <div className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-              No DLIs yet. Click &quot;Add New DLI&quot; to create one.
-            </div>
-          )}
-          </>
+            <>
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Title
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {documents.map((doc) => (
+                    <tr
+                      key={doc.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                    >
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                        {doc.title}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                        {dliTypeConfig[doc.type as DocType].label}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="inline-flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEditDli(doc)}
+                            className="p-2 text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDli(doc.id)}
+                            className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {documents.length === 0 && (
+                <div className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  No DLIs yet. Click &quot;Add New DLI&quot; to create one.
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
