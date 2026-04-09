@@ -10,9 +10,7 @@ export default function BrowserPolyfills() {
       }
 
       // Load only what older browsers may miss.
-      if (!('IntersectionObserver' in window)) {
-        await import('intersection-observer');
-      }
+      // IntersectionObserver is Baseline — no polyfill needed.
 
       if (!('ResizeObserver' in window)) {
         const { default: ResizeObserverPolyfill } = await import('resize-observer-polyfill');
