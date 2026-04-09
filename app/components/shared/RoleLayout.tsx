@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, Shield, Settings, FileText,
   Activity, Database, LogOut, Menu, X, ChevronDown,
-  Bell, Search, User, UserPlus, BookOpen, GraduationCap, Newspaper, UserCircle, ClipboardList, Share, ArrowRightLeft, Key
+  Bell, Search, User, UserPlus, BookOpen, GraduationCap, Newspaper, UserCircle, ClipboardList, Share, ArrowRightLeft, Key,
+  Youtube
 } from 'lucide-react';
 
 interface RoleLayoutProps {
@@ -246,6 +247,61 @@ export default function RoleLayout({ children, rolePath, roleDisplayName, roleCo
       navItems.splice(insertIndex, 0, { name: 'DLIs', href: `/${rolePath}/dlis`, icon: FileText });
     }
 
+    // ICT: news management (same API pattern as center-leader)
+    if (rolePath === 'ict' && !navItems.some(item => item.name === 'Manage News')) {
+      const dlisIndex = navItems.findIndex(item => item.name === 'DLIs');
+      const dashboardIndex = navItems.findIndex(item => item.name === 'Dashboard');
+      const insertIndex =
+        dlisIndex !== -1 ? dlisIndex + 1 : dashboardIndex !== -1 ? dashboardIndex + 1 : 0;
+      navItems.splice(insertIndex, 0, {
+        name: 'Manage News',
+        href: `/${rolePath}/news`,
+        icon: Newspaper,
+      });
+    }
+
+    // ICT: YouTube videos (same API as admin)
+    if (rolePath === 'ict' && !navItems.some(item => item.name === 'Manage Youtube')) {
+      const newsIndex = navItems.findIndex(item => item.name === 'Manage News');
+      const dlisIndex = navItems.findIndex(item => item.name === 'DLIs');
+      const dashboardIndex = navItems.findIndex(item => item.name === 'Dashboard');
+      const insertIndex =
+        newsIndex !== -1
+          ? newsIndex + 1
+          : dlisIndex !== -1
+            ? dlisIndex + 1
+            : dashboardIndex !== -1
+              ? dashboardIndex + 1
+              : 0;
+      navItems.splice(insertIndex, 0, {
+        name: 'Manage Youtube',
+        href: `/${rolePath}/youtube`,
+        icon: Youtube,
+      });
+    }
+
+    if (rolePath === 'ict' && !navItems.some(item => item.name === 'Manage Hero')) {
+      const youtubeIndex = navItems.findIndex(item => item.name === 'Manage Youtube');
+      const newsIndex = navItems.findIndex(item => item.name === 'Manage News');
+      const dlisIndex = navItems.findIndex(item => item.name === 'DLIs');
+      const dashboardIndex = navItems.findIndex(item => item.name === 'Dashboard');
+      const insertIndex =
+        youtubeIndex !== -1
+          ? youtubeIndex + 1
+          : newsIndex !== -1
+            ? newsIndex + 1
+            : dlisIndex !== -1
+              ? dlisIndex + 1
+              : dashboardIndex !== -1
+                ? dashboardIndex + 1
+                : 0;
+      navItems.splice(insertIndex, 0, {
+        name: 'Manage Hero',
+        href: `/${rolePath}/hero`,
+        icon: BookOpen,
+      });
+    }
+
     navigation = navItems;
   } else {
     navigation = [
@@ -263,6 +319,9 @@ export default function RoleLayout({ children, rolePath, roleDisplayName, roleCo
 
     if (rolePath === 'ict') {
       navigation.splice(1, 0, { name: 'DLIs', href: `/${rolePath}/dlis`, icon: FileText });
+      navigation.splice(2, 0, { name: 'Manage News', href: `/${rolePath}/news`, icon: Newspaper });
+      navigation.splice(3, 0, { name: 'Manage Youtube', href: `/${rolePath}/youtube`, icon: Youtube });
+      navigation.splice(4, 0, { name: 'Manage Hero', href: `/${rolePath}/hero`, icon: BookOpen });
     }
 
     if (rolePath === 'head-of-program') {
@@ -401,7 +460,7 @@ export default function RoleLayout({ children, rolePath, roleDisplayName, roleCo
       <div className={`${sidebarOpen ? 'ml-64' : 'ml-0'} transition-all duration-300`}>
         {/* Top Bar */}
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
-          <div className="flex items-center justify-between px-8 py-4">
+          <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
             <div className="flex items-center">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -436,7 +495,7 @@ export default function RoleLayout({ children, rolePath, roleDisplayName, roleCo
         </header>
 
         {/* Page Content */}
-        <main className="p-8">
+        <main className="px-4 sm:px-6 lg:px-8 xl:px-10 py-6 lg:py-8 pb-10">
           {children}
         </main>
       </div>

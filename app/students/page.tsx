@@ -80,7 +80,7 @@ export default function StudentDashboard() {
 
   return (
     <StudentLayout>
-      <div className="p-8">
+      <div className="w-full max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>

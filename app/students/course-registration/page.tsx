@@ -203,7 +203,7 @@ export default function CourseRegistrationPage() {
   if (error) {
     return (
       <StudentLayout>
-        <div className="p-8">
+        <div className="w-full max-w-[1600px] mx-auto">
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
             <strong className="font-bold">Error: </strong>
             <span className="block sm:inline">{error}</span>
@@ -221,7 +221,7 @@ export default function CourseRegistrationPage() {
 
   return (
     <StudentLayout>
-      <div className="p-8">
+      <div className="w-full max-w-[1600px] mx-auto">
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">

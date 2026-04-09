@@ -9,6 +9,7 @@ import { Loader2, FileQuestion, ChevronRight, LogOut } from 'lucide-react';
 import { dliTypeConfig } from '@/lib/dli-milestones';
 import type { DocType } from '@/lib/dli-milestones';
 import type { MilestoneDocument } from '@/lib/dli-milestones';
+import { safeSessionStorageGet, safeSessionStorageRemove } from '../../../lib/safe-browser-storage';
 
 export default function DLIPage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function DLIPage() {
 
   useEffect(() => {
     const checkAccessAndFetch = async () => {
-      const accessCode = typeof window !== 'undefined' ? sessionStorage.getItem('project_access_code') : null;
+      const accessCode = safeSessionStorageGet('project_access_code');
       if (!accessCode) {
         router.replace('/access');
         return;
@@ -32,10 +33,8 @@ export default function DLIPage() {
         });
         const verifyData = await verifyRes.json();
         if (!verifyRes.ok || !verifyData.valid || verifyData.accessType !== 'dli') {
-          if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('project_access_code');
-            sessionStorage.removeItem('project_access_type');
-          }
+          safeSessionStorageRemove('project_access_code');
+          safeSessionStorageRemove('project_access_type');
           router.replace('/access');
           return;
         }
@@ -102,24 +101,22 @@ export default function DLIPage() {
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Hero */}
-        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-20 overflow-hidden">
+        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4 overflow-hidden">
           <div className="absolute inset-0 bg-black/20" />
-          <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-end mb-4">
-              <button
-                type="button"
-                onClick={() => {
-                  sessionStorage.removeItem('project_access_code');
-                  sessionStorage.removeItem('project_access_type');
-                  router.replace('/access');
-                }}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-green-100 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
-              >
-                <LogOut className="h-4 w-4" />
-                Log out
-              </button>
-            </div>
-            <div className="text-center max-w-3xl mx-auto">
+          <div className="relative page-shell w-full z-10">
+            <button
+              type="button"
+              onClick={() => {
+                safeSessionStorageRemove('project_access_code');
+                safeSessionStorageRemove('project_access_type');
+                router.replace('/access');
+              }}
+              className="absolute top-0 right-0 z-20 inline-flex items-center gap-2 px-3 py-2 rounded-lg text-green-100 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
+            <div className="text-center max-w-3xl mx-auto pt-10">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
                 DLI Milestone Documents
               </h1>
@@ -136,7 +133,7 @@ export default function DLIPage() {
 
         {/* Intro */}
         <section className="py-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <p className="text-center text-gray-600 dark:text-gray-300 max-w-2xl mx-auto text-lg">
               Browse and download milestone documents by phase. Each document is available
               as a PDF for reference and compliance.
@@ -146,7 +143,7 @@ export default function DLIPage() {
 
         {/* Milestone documents grid */}
         <section className="py-16">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-500 dark:text-gray-400">
                 <Loader2 className="h-12 w-12 animate-spin mb-4 text-green-600" />
@@ -218,7 +215,7 @@ export default function DLIPage() {
 
         {/* CTA */}
         <section className="py-16 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="page-shell text-center">
             <p className="text-gray-600 dark:text-gray-400 mb-2">
               For questions about DLI milestone documents or access, contact the Centre.
             </p>

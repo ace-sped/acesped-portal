@@ -70,7 +70,7 @@ export default function NewsManagement() {
   const fetchNews = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/news');
+      const response = await fetch('/api/center-leader/news');
       const data = await response.json();
       if (data.success) {
         setNews(data.news);
@@ -229,7 +229,7 @@ export default function NewsManagement() {
 
     try {
       const slug = formData.slug || generateSlug(formData.title);
-      const response = await fetch('/api/admin/news', {
+      const response = await fetch('/api/center-leader/news', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -266,13 +266,12 @@ export default function NewsManagement() {
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/admin/news/${selectedNews.id}`, {
+      const response = await fetch(`/api/center-leader/news/${selectedNews.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           tags: formData.tags.length > 0 ? formData.tags : null,
-          images: images.length > 0 ? images : null,
           publishedAt: formData.publishedAt || null,
         }),
       });
@@ -301,7 +300,7 @@ export default function NewsManagement() {
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/admin/news/${selectedNews.id}`, {
+      const response = await fetch(`/api/center-leader/news/${selectedNews.id}`, {
         method: 'DELETE',
       });
 
@@ -548,7 +547,7 @@ export default function NewsManagement() {
           </div>
         </div>
 
-        {/* Create/Edit Modal */}
+        {/* Create/Edit Modal - Same as center-leader version */}
         {(showCreateModal || showEditModal) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">

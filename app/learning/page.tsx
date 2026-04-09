@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Navbar from '@/app/components/navbar/page';
 import Footer from '@/app/components/footer/page';
+import { safeSessionStorageGet } from '../../lib/safe-browser-storage';
 
 interface VideoLesson {
   id: string;
@@ -56,7 +57,7 @@ function LearningPageContent() {
       fetchCourseData(courseSlug);
     } else {
       // If no course specified, try to get from sessionStorage or show all subscriptions
-      const savedCourseSlug = sessionStorage.getItem('subscribedCourseSlug');
+      const savedCourseSlug = safeSessionStorageGet('subscribedCourseSlug');
       if (savedCourseSlug) {
         fetchCourseData(savedCourseSlug);
       } else {
@@ -222,7 +223,7 @@ function LearningPageContent() {
 
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="page-shell py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <button
@@ -278,7 +279,7 @@ function LearningPageContent() {
         </div>
       </div>
 
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-shell py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Video Player Section */}
           <div className="lg:col-span-2">

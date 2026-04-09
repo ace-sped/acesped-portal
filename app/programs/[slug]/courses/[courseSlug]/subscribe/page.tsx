@@ -12,6 +12,7 @@ import {
 import { TbCurrencyNaira } from 'react-icons/tb';
 import Navbar from '@/app/components/navbar/page';
 import Footer from '@/app/components/footer/page';
+import { safeSessionStorageGet, safeSessionStorageRemove, safeSessionStorageSet } from '../../../../../../lib/safe-browser-storage';
 
 // Helper function to get level display name
 const getLevelDisplayName = (level: string) => {
@@ -174,9 +175,9 @@ export default function CourseSubscriptionPage({
       // Store form data in sessionStorage before redirecting
       if (typeof window !== 'undefined') {
         try {
-          sessionStorage.setItem('subscriptionFormData', JSON.stringify(formData));
-          sessionStorage.setItem('subscriptionSlug', slug);
-          sessionStorage.setItem('subscriptionCourseSlug', courseSlug);
+          safeSessionStorageSet('subscriptionFormData', JSON.stringify(formData));
+          safeSessionStorageSet('subscriptionSlug', slug);
+          safeSessionStorageSet('subscriptionCourseSlug', courseSlug);
         } catch (storageError) {
           console.error('Error saving to sessionStorage:', storageError);
         }
@@ -247,9 +248,9 @@ export default function CourseSubscriptionPage({
         setSubmitSuccess(true);
         // Clear sessionStorage
         if (typeof window !== 'undefined') {
-          sessionStorage.removeItem('subscriptionFormData');
-          sessionStorage.removeItem('subscriptionSlug');
-          sessionStorage.removeItem('subscriptionCourseSlug');
+          safeSessionStorageRemove('subscriptionFormData');
+          safeSessionStorageRemove('subscriptionSlug');
+          safeSessionStorageRemove('subscriptionCourseSlug');
         }
         setTimeout(() => {
           router.push(`/programs/${slug}/courses/${courseSlug}`);
@@ -274,9 +275,9 @@ export default function CourseSubscriptionPage({
 
       if (paymentCallback && reference) {
         // Restore form data from sessionStorage
-        const savedFormData = sessionStorage.getItem('subscriptionFormData');
-        const savedSlug = sessionStorage.getItem('subscriptionSlug');
-        const savedCourseSlug = sessionStorage.getItem('subscriptionCourseSlug');
+        const savedFormData = safeSessionStorageGet('subscriptionFormData');
+        const savedSlug = safeSessionStorageGet('subscriptionSlug');
+        const savedCourseSlug = safeSessionStorageGet('subscriptionCourseSlug');
 
         if (savedFormData && savedSlug === slug && savedCourseSlug === courseSlug && reference) {
           try {
@@ -306,7 +307,7 @@ export default function CourseSubscriptionPage({
     setShowPaymentSuccessModal(false);
 
     try {
-      const savedFormData = sessionStorage.getItem('subscriptionFormData');
+      const savedFormData = safeSessionStorageGet('subscriptionFormData');
       if (!savedFormData) {
         setError('Form data not found. Please try again.');
         setSubmitting(false);
@@ -333,12 +334,12 @@ export default function CourseSubscriptionPage({
         setSubmitSuccess(true);
         // Save course slug for learning page
         if (typeof window !== 'undefined') {
-          sessionStorage.setItem('subscribedCourseSlug', courseSlug);
+          safeSessionStorageSet('subscribedCourseSlug', courseSlug);
         }
         // Clear sessionStorage
-        sessionStorage.removeItem('subscriptionFormData');
-        sessionStorage.removeItem('subscriptionSlug');
-        sessionStorage.removeItem('subscriptionCourseSlug');
+        safeSessionStorageRemove('subscriptionFormData');
+        safeSessionStorageRemove('subscriptionSlug');
+        safeSessionStorageRemove('subscriptionCourseSlug');
         setTimeout(() => {
           router.push(`/learning?course=${courseSlug}`);
         }, 3000);
@@ -509,7 +510,7 @@ export default function CourseSubscriptionPage({
 
       {/* Breadcrumb Navigation */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="page-shell py-3 sm:py-4">
           <div className="flex flex-wrap items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             <button onClick={() => router.push('/')} className="hover:text-green-600 transition-colors">
               Home
@@ -533,10 +534,11 @@ export default function CourseSubscriptionPage({
       </div>
 
       {/* Hero Section */}
-      <section className={`relative bg-gradient-to-br ${courseData.color} text-white py-12 sm:py-16 lg:py-20`}>
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className={`relative bg-gradient-to-br ${courseData.color} text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4`}>
+        <div className="page-shell w-full">
           <div className="max-w-4xl mx-auto text-center">
             <button
+              type="button"
               onClick={() => router.push(`/programs/${slug}/courses/${courseSlug}`)}
               className="inline-flex items-center text-white/90 hover:text-white mb-6 transition-colors"
             >
@@ -554,8 +556,8 @@ export default function CourseSubscriptionPage({
       </section>
 
       {/* Course Info Card */}
-      <section className="py-8 -mt-8 relative z-10">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-8 -mt-4 relative z-10">
+        <div className="page-shell">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex items-center">

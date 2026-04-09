@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/navbar/page';
 import Footer from '../components/footer/page';
+import { safeSessionStorageGet, safeSessionStorageRemove, safeSessionStorageSet } from '../../lib/safe-browser-storage';
 
 type ApplicationStep =
   | 'requirements'
@@ -512,8 +513,8 @@ export default function ApplicationPage() {
       // Store form data in sessionStorage before redirecting
       if (typeof window !== 'undefined') {
         try {
-          sessionStorage.setItem('aceApplicationData', JSON.stringify(formData));
-          sessionStorage.setItem('aceApplicationStep', currentStep);
+          safeSessionStorageSet('aceApplicationData', JSON.stringify(formData));
+          safeSessionStorageSet('aceApplicationStep', currentStep);
         } catch (storageError) {
           console.error('Error saving to sessionStorage:', storageError);
         }
@@ -2124,8 +2125,8 @@ export default function ApplicationPage() {
 
       if (paymentRef) {
         // Restore form data from sessionStorage if available
-        const savedData = sessionStorage.getItem('aceApplicationData');
-        const savedStep = sessionStorage.getItem('aceApplicationStep');
+        const savedData = safeSessionStorageGet('aceApplicationData');
+        const savedStep = safeSessionStorageGet('aceApplicationStep');
         let restoredApplicantEmail = '';
 
         if (savedData) {
@@ -2146,8 +2147,8 @@ export default function ApplicationPage() {
             }
 
             // Clear sessionStorage
-            sessionStorage.removeItem('aceApplicationData');
-            sessionStorage.removeItem('aceApplicationStep');
+            safeSessionStorageRemove('aceApplicationData');
+            safeSessionStorageRemove('aceApplicationStep');
           } catch (error) {
             console.error('Error restoring form data:', error);
           }
@@ -2293,7 +2294,7 @@ export default function ApplicationPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navbar />
 
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="page-shell py-12">
           {/* Progress Stepper */}
           <div className="mb-12">
             <div className="flex items-center justify-between mb-8">

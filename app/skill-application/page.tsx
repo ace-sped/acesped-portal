@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/navbar/page';
 import Footer from '../components/footer/page';
+import { safeSessionStorageGet, safeSessionStorageRemove, safeSessionStorageSet } from '../../lib/safe-browser-storage';
 
 interface Course {
   id: string;
@@ -175,7 +176,7 @@ export default function SkillApplicationPage() {
       setPaymentSuccessful(true);
       setPaymentReference(reference);
       // Restore form data from sessionStorage
-      const savedData = sessionStorage.getItem('skillApplicationData');
+      const savedData = safeSessionStorageGet('skillApplicationData');
       if (savedData) {
         try {
           const parsedData = JSON.parse(savedData);
@@ -262,7 +263,7 @@ export default function SkillApplicationPage() {
       setPaymentReference(null);
       // Clear sessionStorage
       if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('skillApplicationData');
+        safeSessionStorageRemove('skillApplicationData');
       }
 
       // Reset form after 5 seconds
@@ -549,7 +550,7 @@ export default function SkillApplicationPage() {
     try {
       // Store form data in sessionStorage before redirecting to Paystack
       if (typeof window !== 'undefined') {
-        sessionStorage.setItem('skillApplicationData', JSON.stringify(formData));
+        safeSessionStorageSet('skillApplicationData', JSON.stringify(formData));
       }
 
       // Convert to kobo (Paystack uses kobo as the smallest currency unit)

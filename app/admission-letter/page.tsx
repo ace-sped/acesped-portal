@@ -217,7 +217,7 @@ export default function AdmissionLetterPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
-      <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <main className="page-shell py-16">
         <div className="text-center mb-12">
           <span className="inline-flex items-center px-4 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 mb-4">
             <ShieldCheck className="h-4 w-4 mr-2" />

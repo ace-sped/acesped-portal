@@ -93,7 +93,7 @@ export default function ProjectDetailPage() {
     if (otherProjects.length === 0) return null;
 
     return (
-      <div className="w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-gray-200 dark:border-gray-800">
+      <div className="page-shell py-16 border-t border-gray-200 dark:border-gray-800">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Other ACE-SPED Projects</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {otherProjects.map((project) => (
@@ -168,7 +168,7 @@ export default function ProjectDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
         <Navbar />
-        <div className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16 text-center flex flex-col items-center justify-center">
+        <div className="flex-1 page-shell py-16 text-center flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Project not found</h1>
           <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">The project you are looking for does not exist, has been removed, or you do not have permission to view it.</p>
           <Link
@@ -188,7 +188,7 @@ export default function ProjectDetailPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <Navbar />
 
-      <div className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
+      <div className="flex-1 page-shell py-10">
         <Link
           href="/projects"
           className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-300 hover:text-emerald-800 dark:hover:text-emerald-200 transition-colors mb-8 group"

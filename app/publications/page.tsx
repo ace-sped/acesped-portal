@@ -100,7 +100,7 @@ export default function PublicationsPage() {
             <Navbar />
 
             {/* Hero Section */}
-            <div className="relative bg-gradient-to-br from-green-800 via-emerald-800 to-teal-900 text-white py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+            <div className="relative bg-gradient-to-br from-green-800 via-emerald-800 to-teal-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 overflow-hidden">
                 {/* Abstract Background Shapes */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
                     <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-green-400/20 blur-3xl mix-blend-screen"></div>
@@ -109,7 +109,7 @@ export default function PublicationsPage() {
                     <div className="absolute -bottom-10 left-1/2 w-64 h-64 rounded-full bg-yellow-400/10 blur-3xl mix-blend-screen"></div>
                 </div>
 
-                <div className="relative z-10 max-w-screen-2xl mx-auto text-center">
+                <div className="relative z-10 w-full max-w-screen-2xl mx-auto text-center">
                     <div className="inline-flex items-center justify-center p-2 bg-emerald-800/50 rounded-full mb-6 backdrop-blur-sm border border-emerald-700/50">
                         <BookOpen className="w-5 h-5 text-emerald-300 mr-2" />
                         <span className="text-sm font-medium text-emerald-100">Research Output & Knowledge Base</span>
@@ -124,10 +124,10 @@ export default function PublicationsPage() {
             </div>
 
             {/* Main Content */}
-            <main className="flex-grow max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
+            <main className="flex-grow page-shell py-12">
 
                 {/* Search and Filter Section */}
-                <div className="bg-white rounded-2xl shadow-xl p-6 mb-10 -mt-20 relative z-20 border border-gray-100">
+                <div className="bg-white rounded-2xl shadow-xl p-6 mb-10 -mt-8 relative z-20 border border-gray-100">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                         {/* Search Bar */}
                         <div className="md:col-span-6 lg:col-span-7 relative">

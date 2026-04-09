@@ -84,7 +84,7 @@ export default function AdmissionExercisePage() {
 
             {/* Breadcrumb Section */}
             <div className="bg-gray-100 py-3 border-b border-gray-200">
-                <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="page-shell">
                     <div className="text-sm text-gray-600">
                         <Link href="/" className="hover:text-green-600 transition-colors">
                             Home
@@ -97,7 +97,7 @@ export default function AdmissionExercisePage() {
 
             {/* Main Content Section */}
             <main className="flex-grow py-12 bg-white">
-                <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="page-shell">
                     <div className="space-y-8">
                         {/* Heading & Search */}
                         <div>

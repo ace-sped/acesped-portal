@@ -999,14 +999,14 @@ export default function CourseDetailPage({
         
         {/* Breadcrumb Skeleton */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="page-shell py-3 sm:py-4">
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-64 animate-pulse"></div>
           </div>
         </div>
 
         {/* Hero Section Skeleton */}
-        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-12 sm:py-16 lg:py-20">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
+          <div className="page-shell w-full">
             <div className="max-w-4xl mx-auto text-center">
               <div className="flex flex-col items-center justify-center min-h-[30vh]">
                 <Loader2 className="h-12 w-12 text-white animate-spin mb-4" />
@@ -1018,8 +1018,8 @@ export default function CourseDetailPage({
         </section>
 
         {/* Quick Info Cards Skeleton */}
-        <section className="py-0 -mt-8 sm:-mt-12 relative z-10">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-0 -mt-4 sm:-mt-6 relative z-10">
+          <div className="page-shell">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-xl border border-gray-200 dark:border-gray-700 animate-pulse">
@@ -1038,7 +1038,7 @@ export default function CourseDetailPage({
 
         {/* Content Skeleton */}
         <section className="py-12 sm:py-16 lg:py-20 bg-white dark:bg-gray-900">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="space-y-8">
               <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mx-auto animate-pulse"></div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl mx-auto">
@@ -1137,7 +1137,7 @@ export default function CourseDetailPage({
 
       {/* Breadcrumb Navigation */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="page-shell py-3 sm:py-4">
           <div className="flex flex-wrap items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             <button onClick={() => router.push('/')} className="hover:text-green-600 transition-colors break-words">
               Home
@@ -1157,8 +1157,8 @@ export default function CourseDetailPage({
       </div>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-12 sm:py-16 lg:py-20">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
+        <div className="page-shell w-full">
           <div className="max-w-4xl mx-auto text-center">
             <span className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-white/20 backdrop-blur-sm rounded-full text-xs sm:text-sm font-semibold mb-4 sm:mb-6">
               {courseData.level}
@@ -1170,8 +1170,8 @@ export default function CourseDetailPage({
       </section>
 
       {/* Quick Info Cards */}
-      <section className="py-0 -mt-8 sm:-mt-12 relative z-10">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-0 -mt-4 sm:-mt-6 relative z-10">
+        <div className="page-shell">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-xl border border-gray-200 dark:border-gray-700 flex flex-col h-full">
               <div className="flex items-start">
@@ -1224,7 +1224,7 @@ export default function CourseDetailPage({
       {/* Learning Objectives */}
       {courseData.objectives && courseData.objectives.length > 0 && (
         <section className="pt-16 sm:pt-20 lg:pt-24 pb-12 sm:pb-16 lg:pb-20 bg-white dark:bg-gray-900">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="text-center mb-8 sm:mb-12">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
                 What You'll Learn
@@ -1250,7 +1250,7 @@ export default function CourseDetailPage({
       {/* Curriculum */}
       {courseData.curriculum && courseData.curriculum.length > 0 && (
         <section className={`py-12 sm:py-16 lg:py-20 ${courseData.objectives && courseData.objectives.length > 0 ? 'bg-gray-50 dark:bg-gray-950' : 'bg-white dark:bg-gray-900'}`}>
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="text-center mb-8 sm:mb-12">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
                 Course Curriculum
@@ -1276,7 +1276,7 @@ export default function CourseDetailPage({
       {/* Requirements & Career Paths */}
       {(courseData.requirements && courseData.requirements.length > 0) || (courseData.careerPaths && courseData.careerPaths.length > 0) ? (
         <section className={`py-12 sm:py-16 lg:py-20 ${courseData.curriculum && courseData.curriculum.length > 0 ? 'bg-white dark:bg-gray-900' : courseData.objectives && courseData.objectives.length > 0 ? 'bg-gray-50 dark:bg-gray-950' : 'bg-white dark:bg-gray-900'}`}>
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 xl:gap-16">
               {courseData.requirements && courseData.requirements.length > 0 && (
                 <div className="flex flex-col">

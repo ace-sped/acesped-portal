@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../components/navbar/page';
 import Footer from '../components/footer/page';
 import { Lock, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
+import { safeSessionStorageSet } from '../../lib/safe-browser-storage';
 
 export default function AccessCodePage() {
   const router = useRouter();
@@ -34,9 +35,9 @@ export default function AccessCodePage() {
 
       if (response.ok && data.valid) {
         const code = accessCode.trim();
-        sessionStorage.setItem('project_access_code', code);
+        safeSessionStorageSet('project_access_code', code);
         const accessType = data.accessType ?? 'projects';
-        sessionStorage.setItem('project_access_type', accessType);
+        safeSessionStorageSet('project_access_type', accessType);
         if (accessType === 'dli') {
           router.push('/about/dli');
         } else {

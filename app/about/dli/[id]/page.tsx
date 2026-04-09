@@ -20,6 +20,7 @@ import type { LucideIcon } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { dliTypeConfig } from '@/lib/dli-milestones';
 import type { DocType } from '@/lib/dli-milestones';
+import { safeSessionStorageGet, safeSessionStorageRemove } from '../../../../lib/safe-browser-storage';
 
 interface DliDetail {
   id: string;
@@ -100,7 +101,7 @@ export default function DLIDetailPage({
 
   useEffect(() => {
     const checkAccess = async () => {
-      const accessCode = typeof window !== 'undefined' ? sessionStorage.getItem('project_access_code') : null;
+      const accessCode = safeSessionStorageGet('project_access_code');
       if (!accessCode) {
         router.replace('/access');
         return;
@@ -114,8 +115,8 @@ export default function DLIDetailPage({
         const verifyData = await verifyRes.json();
         if (!verifyRes.ok || !verifyData.valid || verifyData.accessType !== 'dli') {
           if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('project_access_code');
-            sessionStorage.removeItem('project_access_type');
+            safeSessionStorageRemove('project_access_code');
+            safeSessionStorageRemove('project_access_type');
           }
           router.replace('/access');
           return;
@@ -224,22 +225,22 @@ export default function DLIDetailPage({
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Hero */}
-        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-16 overflow-hidden">
+        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4 overflow-hidden">
           <div className="absolute inset-0 bg-black/20" />
-          <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="relative page-shell w-full z-10">
+            <div className="absolute top-0 left-0 right-0 z-20 flex flex-wrap items-center justify-between gap-2">
               <Link
                 href="/about/dli"
-                className="inline-flex items-center gap-2 text-green-100 hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 text-green-100 hover:text-white transition-colors text-sm"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4 shrink-0" />
                 Back to DLI documents
               </Link>
               <button
                 type="button"
                 onClick={() => {
-                  sessionStorage.removeItem('project_access_code');
-                  sessionStorage.removeItem('project_access_type');
+                  safeSessionStorageRemove('project_access_code');
+                  safeSessionStorageRemove('project_access_type');
                   router.replace('/access');
                 }}
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-green-100 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
@@ -249,7 +250,7 @@ export default function DLIDetailPage({
               </button>
             </div>
             {!loading && dli && (
-              <div className="text-center mt-4">
+              <div className="text-center max-w-3xl mx-auto pt-12 sm:pt-10">
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <span
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-white/20 text-white backdrop-blur-sm`}
@@ -269,7 +270,7 @@ export default function DLIDetailPage({
         </section>
 
         <section className="py-12">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-500 dark:text-gray-400">
                 <Loader2 className="h-12 w-12 animate-spin mb-4 text-green-600" />

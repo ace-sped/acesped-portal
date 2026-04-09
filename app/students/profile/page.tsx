@@ -188,7 +188,7 @@ export default function StudentProfilePage() {
   if (loading) {
     return (
       <StudentLayout>
-        <div className="p-8 flex items-center justify-center min-h-[60vh]">
+        <div className="w-full max-w-[1600px] mx-auto flex items-center justify-center min-h-[60vh] py-8">
           <div className="text-center">
             <Loader2 className="h-12 w-12 animate-spin text-emerald-600 mx-auto mb-4" />
             <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
@@ -201,7 +201,7 @@ export default function StudentProfilePage() {
   if (error || !profile) {
     return (
       <StudentLayout>
-        <div className="p-8">
+        <div className="w-full max-w-[1600px] mx-auto">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
@@ -222,7 +222,7 @@ export default function StudentProfilePage() {
 
   return (
     <StudentLayout>
-      <div className="p-8">
+      <div className="w-full max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">

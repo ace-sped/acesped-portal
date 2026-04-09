@@ -273,7 +273,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="min-h-screen">
+        <main className="min-h-screen px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 pb-12">
           {children}
         </main>
       </div>

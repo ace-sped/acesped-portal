@@ -232,9 +232,9 @@ export default function NewsPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="bg-linear-to-br from-green-900 to-emerald-900 text-white py-20">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
+      <section className="bg-linear-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
+        <div className="page-shell w-full">
+          <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               News & Events
             </h1>
@@ -247,7 +247,7 @@ export default function NewsPage() {
 
       {/* Filters and Search */}
       <section className="py-8 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             {/* Search */}
             <div className="relative flex-1 max-w-md w-full">
@@ -284,7 +284,7 @@ export default function NewsPage() {
 
       {/* News Grid */}
       <section className="py-16">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="h-12 w-12 text-green-600 animate-spin mb-4" />

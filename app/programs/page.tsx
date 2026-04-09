@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   GraduationCap, Microscope, Lightbulb, Briefcase, ArrowRight, ArrowLeft,
-  Users, Clock, Award, BookOpen, Loader2
+  Users, Award, BookOpen, Loader2
 } from 'lucide-react';
 import Navbar from '../components/navbar/page';
 import Footer from '../components/footer/page';
@@ -50,8 +50,6 @@ export default function ProgramsPage() {
     }
   };
 
-  // Calculate stats
-  const totalCourses = programs.reduce((sum, program) => sum + (program.totalCourses || 0), 0);
   const totalPrograms = programs.length;
 
   return (
@@ -59,17 +57,17 @@ export default function ProgramsPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-12 sm:py-16 lg:py-20">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button
-            onClick={() => router.push('/')}
-            className="flex items-center text-white/80 hover:text-white mb-6 sm:mb-8 transition-colors text-sm sm:text-base"
-          >
-            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-            Back to Home
-          </button>
-
+      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
+        <div className="page-shell w-full">
           <div className="text-center max-w-4xl mx-auto">
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="inline-flex items-center text-white/80 hover:text-white mb-6 sm:mb-8 transition-colors text-sm sm:text-base"
+            >
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+              Back to Home
+            </button>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 break-words">
               Our Programs
             </h1>
@@ -81,70 +79,70 @@ export default function ProgramsPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-0 -mt-12 sm:-mt-16 relative z-10">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-xl border border-gray-200 dark:border-gray-700 text-center">
-              <div className="bg-green-100 dark:bg-green-900 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <BookOpen className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-green-600 dark:text-green-400" />
+      <section className="py-0 -mt-6 sm:-mt-8 relative z-10">
+        <div className="page-shell">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 shadow-lg border border-gray-200 dark:border-gray-700 text-center">
+              <div className="bg-green-100 dark:bg-green-900 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mx-auto mb-2">
+                <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
               </div>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{totalPrograms}</p>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 break-words">Total Programs</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-0.5">{totalPrograms}</p>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 break-words leading-tight">Total Programs</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-xl border border-gray-200 dark:border-gray-700 text-center">
-              <div className="bg-blue-100 dark:bg-blue-900 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-blue-600 dark:text-blue-400" />
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 shadow-lg border border-gray-200 dark:border-gray-700 text-center">
+              <div className="bg-blue-100 dark:bg-blue-900 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">1000+</p>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 break-words">Active Students</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-0.5">1000+</p>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 break-words leading-tight">Active Students</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-xl border border-gray-200 dark:border-gray-700 text-center">
-              <div className="bg-purple-100 dark:bg-purple-900 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Award className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-purple-600 dark:text-purple-400" />
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 shadow-lg border border-gray-200 dark:border-gray-700 text-center">
+              <div className="bg-purple-100 dark:bg-purple-900 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Award className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
               </div>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">95%</p>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 break-words">Success Rate</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-0.5">95%</p>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 break-words leading-tight">Success Rate</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-xl border border-gray-200 dark:border-gray-700 text-center">
-              <div className="bg-orange-100 dark:bg-orange-900 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <GraduationCap className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange-600 dark:text-orange-400" />
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 shadow-lg border border-gray-200 dark:border-gray-700 text-center">
+              <div className="bg-orange-100 dark:bg-orange-900 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mx-auto mb-2">
+                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400" />
               </div>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{totalPrograms}</p>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 break-words">Programs Available</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-0.5">{totalPrograms}</p>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 break-words leading-tight">Programs Available</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Programs Grid */}
-      <section className="py-12 sm:py-16 lg:py-24 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-8 sm:py-12 lg:py-16 bg-gray-50 dark:bg-gray-900">
+        <div className="page-shell">
           {loading ? (
-            <div className="py-12 sm:py-16 lg:py-20">
+            <div className="py-8 sm:py-12">
               <div className="flex flex-col items-center justify-center">
-                <Loader2 className="h-12 w-12 text-green-600 animate-spin mb-4" />
-                <p className="text-gray-600 dark:text-gray-400 text-lg">Loading programs...</p>
-                <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">Please wait while we fetch the latest programs</p>
+                <Loader2 className="h-10 w-10 text-green-600 animate-spin mb-3" />
+                <p className="text-gray-600 dark:text-gray-400 text-base">Loading programs...</p>
+                <p className="text-gray-500 dark:text-gray-500 text-xs mt-1.5">Please wait while we fetch the latest programs</p>
               </div>
               {/* Skeleton loaders */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-12">
-                {[1, 2].map((i) => (
-                  <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700 animate-pulse">
-                    <div className="flex items-center mb-6">
-                      <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-xl mr-4"></div>
-                      <div className="flex-1">
-                        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-2 w-3/4"></div>
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 mt-8">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700 animate-pulse">
+                    <div className="flex items-center mb-4">
+                      <div className="w-11 h-11 bg-gray-200 dark:bg-gray-700 rounded-lg mr-3 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2 w-3/4" />
+                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
                       </div>
                     </div>
-                    <div className="space-y-3">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/6" />
                     </div>
-                    <div className="flex items-center justify-between mt-6">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-                      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20" />
+                      <div className="h-7 bg-gray-200 dark:bg-gray-700 rounded w-16" />
                     </div>
                   </div>
                 ))}
@@ -159,46 +157,47 @@ export default function ProgramsPage() {
               <p className="text-gray-600 dark:text-gray-400">No programs available at the moment.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
               {programs.map((program) => {
                 const Icon = getIconComponent(program.icon);
                 const color = program.color || 'from-green-500 to-emerald-500';
                 return (
                   <div
                     key={program.id}
-                    className="group relative bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden border border-gray-200 dark:border-gray-700"
+                    className="group relative bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-gray-200 dark:border-gray-700"
                   >
-                    <div className={`absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br ${color} rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity`}></div>
+                    <div className={`absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br ${color} rounded-full blur-2xl opacity-15 group-hover:opacity-25 transition-opacity`} />
                     
                     <div className="relative">
-                      <div className={`inline-flex p-3 sm:p-4 bg-gradient-to-br ${color} rounded-xl mb-4 sm:mb-6 shadow-lg`}>
-                        <Icon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                      <div className={`inline-flex p-2 sm:p-2.5 bg-gradient-to-br ${color} rounded-lg mb-3 shadow-md`}>
+                        <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
 
-                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 break-words">
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5 break-words leading-snug">
                         {program.title}
                       </h3>
 
                       {program.subtitle && (
-                        <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 mb-2 font-medium break-words">
+                        <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-2 font-medium break-words leading-snug">
                           {program.subtitle}
                         </p>
                       )}
 
-                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4 sm:mb-6 line-clamp-3 break-words">
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2 sm:line-clamp-3 break-words leading-relaxed">
                         {program.description}
                       </p>
 
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                        <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-500 break-words">
-                          {program.totalCourses || 0} {program.totalCourses === 1 ? 'course' : 'courses'} available
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-gray-100 dark:border-gray-700/80">
+                        <span className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-500 break-words">
+                          {program.totalCourses || 0} {program.totalCourses === 1 ? 'course' : 'courses'}
                         </span>
                         <button 
+                          type="button"
                           onClick={() => router.push(`/programs/${program.slug}`)}
-                          className="text-green-600 dark:text-green-400 font-semibold flex items-center group-hover:gap-2 transition-all text-sm sm:text-base"
+                          className="text-green-600 dark:text-green-400 font-semibold inline-flex items-center gap-0.5 text-xs sm:text-sm hover:gap-1 transition-all"
                         >
                           Explore
-                          <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4 group-hover:translate-x-1 transition-transform" />
+                          <ArrowRight className="h-3 w-3 sm:h-3.5 sm:w-3.5 group-hover:translate-x-0.5 transition-transform" />
                         </button>
                       </div>
                     </div>

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../components/navbar/page';
 import Footer from '../components/footer/page';
 import { Search, Filter, Calendar, Users, Clock, ArrowRight, FolderGit2, Lock } from 'lucide-react';
+import { safeSessionStorageGet, safeSessionStorageRemove } from '../../lib/safe-browser-storage';
 
 interface Project {
   id: string;
@@ -39,7 +40,7 @@ export default function ProjectsPage() {
   useEffect(() => {
     const checkAccessAndFetchProjects = async () => {
       // Check for access code in sessionStorage
-      const accessCode = sessionStorage.getItem('project_access_code');
+      const accessCode = safeSessionStorageGet('project_access_code');
       
       if (!accessCode) {
         // No access code found, redirect to access page
@@ -65,8 +66,8 @@ export default function ProjectsPage() {
         const verifyData = await verifyResponse.json();
 
         if (!verifyResponse.ok || !verifyData.valid || verifyData.accessType !== 'projects') {
-          sessionStorage.removeItem('project_access_code');
-          sessionStorage.removeItem('project_access_type');
+          safeSessionStorageRemove('project_access_code');
+          safeSessionStorageRemove('project_access_type');
           router.push('/access');
           return;
         }
@@ -99,7 +100,7 @@ export default function ProjectsPage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        const accessCode = sessionStorage.getItem('project_access_code');
+        const accessCode = safeSessionStorageGet('project_access_code');
         if (!accessCode) {
           router.push('/access');
         }
@@ -124,8 +125,8 @@ export default function ProjectsPage() {
   }, [query, status, projects]);
 
   const handleSignOut = () => {
-    sessionStorage.removeItem('project_access_code');
-    sessionStorage.removeItem('project_access_type');
+    safeSessionStorageRemove('project_access_code');
+    safeSessionStorageRemove('project_access_type');
     router.push('/access');
   };
 
@@ -143,43 +144,39 @@ export default function ProjectsPage() {
       <Navbar />
 
       {/* Hero */}
-      <div className="relative bg-linear-to-br from-green-800 via-emerald-800 to-teal-900 text-white py-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <div className="relative bg-linear-to-br from-green-800 via-emerald-800 to-teal-900 text-white h-[40vh] min-h-[40vh] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 overflow-hidden flex flex-col justify-center items-center py-4">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-green-400/20 blur-3xl mix-blend-screen" />
           <div className="absolute top-1/2 left-1/4 w-72 h-72 rounded-full bg-emerald-400/20 blur-3xl mix-blend-screen animate-pulse" />
           <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-teal-400/20 blur-3xl mix-blend-screen" />
         </div>
 
-        <div className="relative z-10 max-w-screen-2xl mx-auto">
-          <div className="flex items-start justify-between gap-4">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-800/40 rounded-full border border-emerald-700/60 backdrop-blur-sm mb-6">
-                <FolderGit2 className="w-4 h-4 text-emerald-200" />
-                <span className="text-sm text-emerald-100">Research & Innovation</span>
-              </div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                Projects
-              </h1>
-              <p className="text-emerald-100 text-lg leading-relaxed">
-                Explore ongoing and upcoming projects across power systems, renewables,
-                energy storage, and policy.
-              </p>
-            </div>
-            
-            {/* Sign Out Button */}
-            <button
-              onClick={handleSignOut}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-lg transition-colors text-white text-sm font-medium"
-            >
-              <Lock className="w-4 h-4" />
-              Sign Out
-            </button>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="absolute top-4 right-4 sm:top-5 sm:right-5 lg:right-8 z-20 hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-lg transition-colors text-white text-sm font-medium"
+        >
+          <Lock className="w-4 h-4" />
+          Sign Out
+        </button>
+
+        <div className="relative z-10 w-full max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-800/40 rounded-full border border-emerald-700/60 backdrop-blur-sm mb-6">
+            <FolderGit2 className="w-4 h-4 text-emerald-200" />
+            <span className="text-sm text-emerald-100">Research & Innovation</span>
           </div>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+            Projects
+          </h1>
+          <p className="text-emerald-100 text-lg leading-relaxed">
+            Explore ongoing and upcoming projects across power systems, renewables,
+            energy storage, and policy.
+          </p>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 max-w-screen-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
+      <div className="flex-1 page-shell py-10">
         {/* Mobile Sign Out Button */}
         <div className="sm:hidden mb-4">
           <button

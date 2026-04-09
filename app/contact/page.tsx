@@ -100,10 +100,10 @@ export default function ContactPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-20">
+      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
         <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
+        <div className="relative page-shell w-full z-10">
+          <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
               Get in Touch
             </h1>
@@ -116,7 +116,7 @@ export default function ContactPage() {
 
       {/* Contact Info Cards */}
       <section className="py-16 bg-white dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {contactInfo.map((info, index) => {
               const Icon = info.icon;
@@ -147,7 +147,7 @@ export default function ContactPage() {
 
       {/* Contact Form & Map Section */}
       <section className="py-16 bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Form */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">

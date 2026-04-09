@@ -163,16 +163,24 @@ export default function ResearchPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-20">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+      <section className="relative isolate overflow-hidden bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          aria-hidden
+        >
+          <div className="absolute -top-20 -left-24 h-64 w-64 rounded-full bg-emerald-400/15 blur-3xl mix-blend-screen animate-blob motion-reduce:animate-none" />
+          <div className="absolute top-1/2 -right-16 h-56 w-56 -translate-y-1/2 rounded-full bg-teal-400/20 blur-3xl mix-blend-screen animate-blob animation-delay-2000 motion-reduce:animate-none" />
+          <div className="absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-green-300/10 blur-3xl mix-blend-screen animate-blob animation-delay-4000 motion-reduce:animate-none" />
+        </div>
+        <div className="page-shell relative z-10 w-full">
+          <div className="max-w-3xl mx-auto text-center px-1">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3 leading-tight animate-in fade-in slide-in-from-bottom-5 duration-700 motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0">
               Research & Innovation
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 leading-relaxed mb-8">
+            <p className="text-sm sm:text-base md:text-lg text-white/90 leading-snug mb-2 sm:mb-3 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 motion-reduce:animate-none motion-reduce:delay-0 motion-reduce:opacity-100 motion-reduce:translate-y-0">
               Advancing sustainable power and energy development through cutting-edge research
             </p>
-            <p className="text-lg text-white/80 max-w-3xl mx-auto">
+            <p className="text-xs sm:text-sm md:text-base text-white/80 max-w-2xl mx-auto leading-relaxed line-clamp-4 sm:line-clamp-none animate-in fade-in slide-in-from-bottom-3 duration-700 delay-300 motion-reduce:animate-none motion-reduce:delay-0 motion-reduce:opacity-100 motion-reduce:translate-y-0">
               ACE-SPED is at the forefront of scientific discovery and technological innovation, 
               conducting groundbreaking research that addresses real-world energy challenges and 
               shapes the future of sustainable development.
@@ -183,7 +191,7 @@ export default function ResearchPage() {
 
       {/* Research Achievements */}
       <section className="py-16 bg-white dark:bg-gray-800">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {achievements.map((achievement, index) => {
               const Icon = achievement.icon;
@@ -207,7 +215,7 @@ export default function ResearchPage() {
 
       {/* Research Centers */}
       <section className="py-20 bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Research Centers
@@ -254,7 +262,7 @@ export default function ResearchPage() {
 
       {/* Research Projects */}
       <section className="py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Active Research Projects
@@ -305,7 +313,7 @@ export default function ResearchPage() {
 
       {/* Publications */}
       <section className="py-20 bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Recent Publications
@@ -353,7 +361,7 @@ export default function ResearchPage() {
 
       {/* Research Opportunities */}
       <section className="py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="bg-gradient-to-br from-green-900 to-emerald-900 rounded-3xl p-12 text-white">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-4xl md:text-5xl font-bold mb-6">

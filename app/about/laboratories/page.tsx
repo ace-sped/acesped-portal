@@ -206,11 +206,11 @@ export default function LaboratoriesPage() {
       
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Hero Section */}
-        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-20 overflow-hidden">
+        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4 overflow-hidden">
           <div className="absolute inset-0 bg-black/20"></div>
           <div className="absolute inset-0 bg-[url('/images/lab.jpg')] bg-cover bg-center opacity-10"></div>
-          <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
+          <div className="relative page-shell w-full z-10">
+            <div className="text-center max-w-4xl mx-auto">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
                 ACE-SPED Laboratories
               </h1>
@@ -227,7 +227,7 @@ export default function LaboratoriesPage() {
 
         {/* Stats Section */}
         <section className="py-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {stats.map((stat, index) => {
                 const Icon = stat.icon;
@@ -251,7 +251,7 @@ export default function LaboratoriesPage() {
 
         {/* Overview Section */}
         <section className="py-16 bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
                 Our Laboratory Facilities
@@ -267,7 +267,7 @@ export default function LaboratoriesPage() {
 
         {/* Laboratories Grid */}
         <section className="py-16 bg-white dark:bg-gray-800">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="space-y-12">
               {laboratories.map((lab, index) => {
                 const Icon = lab.icon;
@@ -364,7 +364,7 @@ export default function LaboratoriesPage() {
 
         {/* Facilities Features */}
         <section className="py-16 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
                 Laboratory Features & Services
@@ -401,7 +401,7 @@ export default function LaboratoriesPage() {
 
         {/* Booking & Access Section */}
         <section className="py-16 bg-white dark:bg-gray-800">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="bg-gradient-to-br from-green-900 to-emerald-900 rounded-2xl p-8 md:p-12 text-white">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                 <div>

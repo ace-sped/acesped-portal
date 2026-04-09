@@ -88,8 +88,8 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
         <Navbar />
         
         {/* Hero Section Skeleton */}
-        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-12 sm:py-16 lg:py-20">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
+          <div className="page-shell w-full">
             <div className="flex flex-col items-center justify-center min-h-[40vh]">
               <Loader2 className="h-12 w-12 text-white animate-spin mb-4" />
               <p className="text-white/90 text-lg mb-2">Loading service...</p>
@@ -100,7 +100,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
 
         {/* Content Skeleton */}
         <section className="py-12 sm:py-16 bg-white dark:bg-gray-900">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="space-y-8">
               <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mx-auto animate-pulse"></div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -127,7 +127,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
         
         {/* Breadcrumb */}
         <section className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <nav className="flex items-center space-x-2 text-sm">
               <button
                 onClick={() => router.push('/')}
@@ -232,36 +232,35 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-12 sm:py-16 lg:py-20 xl:py-24">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button
-            onClick={() => router.push('/services')}
-            className="flex items-center text-white/80 hover:text-white mb-6 sm:mb-8 transition-colors text-sm sm:text-base w-fit"
-          >
-            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
-            <span className="whitespace-nowrap">Back to Services</span>
-          </button>
-
-          <div className="w-full">
-            <div className="max-w-screen-2xl">
-              <div className={`inline-flex p-3 sm:p-4 bg-gradient-to-br ${color} rounded-xl mb-4 sm:mb-6 flex-shrink-0`}>
+      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4 overflow-y-auto">
+        <div className="page-shell w-full">
+          <div className="max-w-4xl mx-auto text-center">
+            <button
+              type="button"
+              onClick={() => router.push('/services')}
+              className="inline-flex items-center text-white/80 hover:text-white mb-6 sm:mb-8 transition-colors text-sm sm:text-base"
+            >
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+              <span className="whitespace-nowrap">Back to Services</span>
+            </button>
+            <div className="flex justify-center mb-4 sm:mb-6">
+              <div className={`inline-flex p-3 sm:p-4 bg-gradient-to-br ${color} rounded-xl flex-shrink-0`}>
                 <Icon className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-white" />
               </div>
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold mb-3 sm:mb-4 lg:mb-5 break-words leading-tight" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{service.title}</h1>
-              {service.subtitle && (
-                <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-green-100 mb-4 sm:mb-6 break-words leading-relaxed">{service.subtitle}</p>
-              )}
-              <p className="text-sm sm:text-base lg:text-lg text-white/90 mb-6 sm:mb-8 lg:mb-10 break-words leading-relaxed max-w-5xl">{service.description}</p>
-              
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 items-stretch sm:items-center">
-                <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-sm rounded-xl font-semibold flex items-center justify-center sm:justify-start flex-shrink-0 w-full sm:w-auto">
-                  <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mr-2 sm:mr-3 whitespace-nowrap">{service.programs?.length || service.totalCourses || 0}</span>
-                  <span className="text-xs sm:text-sm lg:text-base text-white/90 whitespace-nowrap">Programs Available</span>
-                </div>
-                <button className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold text-xs sm:text-sm lg:text-base hover:bg-white hover:text-green-800 transition-all whitespace-nowrap flex-shrink-0 w-full sm:w-auto text-center">
-                  Download Brochure
-                </button>
+            </div>
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold mb-3 sm:mb-4 lg:mb-5 break-words leading-tight" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{service.title}</h1>
+            {service.subtitle && (
+              <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-green-100 mb-4 sm:mb-6 break-words leading-relaxed">{service.subtitle}</p>
+            )}
+            <p className="text-sm sm:text-base lg:text-lg text-white/90 mb-6 sm:mb-8 lg:mb-10 break-words leading-relaxed max-w-3xl mx-auto">{service.description}</p>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 items-stretch sm:items-center justify-center">
+              <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-sm rounded-xl font-semibold flex items-center justify-center flex-shrink-0 w-full sm:w-auto">
+                <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mr-2 sm:mr-3 whitespace-nowrap">{service.programs?.length || service.totalCourses || 0}</span>
+                <span className="text-xs sm:text-sm lg:text-base text-white/90 whitespace-nowrap">Programs Available</span>
               </div>
+              <button type="button" className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold text-xs sm:text-sm lg:text-base hover:bg-white hover:text-green-800 transition-all whitespace-nowrap flex-shrink-0 w-full sm:w-auto text-center">
+                Download Brochure
+              </button>
             </div>
           </div>
         </div>
@@ -270,7 +269,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
       {/* Thematic Areas Section (if available) */}
       {thematicAreas.length > 0 && (
         <section className="py-12 sm:py-16 lg:py-20 bg-gray-50 dark:bg-gray-800">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-6 sm:mb-8 lg:mb-10">
               Thematic Areas
             </h2>
@@ -291,7 +290,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
       {/* Available Programs Section */}
       {((service.programs && service.programs.length > 0) || (service.courses && service.courses.length > 0)) && (
         <section className={`py-12 sm:py-16 lg:py-20 ${thematicAreas.length > 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'}`}>
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-6 sm:mb-8 lg:mb-10">
               Available Programs
             </h2>
@@ -336,7 +335,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
 
       {(!service.programs || service.programs.length === 0) && (!service.courses || service.courses.length === 0) && (
         <section className="py-16 sm:py-20 lg:py-24 bg-white dark:bg-gray-900">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="page-shell text-center">
             <div className="max-w-2xl mx-auto">
               <FileText className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
               <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400">No programs available for this service yet.</p>

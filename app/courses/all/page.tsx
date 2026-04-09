@@ -220,17 +220,17 @@ export default function AllCoursesPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-16">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button
-            onClick={() => router.push('/programs')}
-            className="flex items-center text-white/80 hover:text-white mb-8 transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            Back to Programs
-          </button>
-
+      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
+        <div className="page-shell w-full">
           <div className="text-center max-w-4xl mx-auto">
+            <button
+              type="button"
+              onClick={() => router.push('/programs')}
+              className="inline-flex items-center text-white/80 hover:text-white mb-8 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5 mr-2" />
+              Back to Programs
+            </button>
             <div className="inline-flex items-center justify-center bg-white/20 backdrop-blur-sm rounded-full px-6 py-3 mb-6">
               <BookOpen className="h-6 w-6 mr-2" />
               <span className="font-semibold">A to Z Course Listing</span>
@@ -247,7 +247,7 @@ export default function AllCoursesPage() {
 
       {/* Search and Filter Section */}
       <section className="py-8 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-20 z-40">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div className="relative md:col-span-1">
@@ -309,7 +309,7 @@ export default function AllCoursesPage() {
 
       {/* Alphabetical Index */}
       <section className="py-6 bg-gray-100 dark:bg-gray-800/50 sticky top-36 z-30 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="flex flex-wrap justify-center gap-2">
             {letters.map(letter => (
               <a
@@ -326,7 +326,7 @@ export default function AllCoursesPage() {
 
       {/* Courses Table */}
       <section className="py-12 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           {letters.length > 0 ? (
             <div className="space-y-12">
               {letters.map(letter => (

@@ -667,6 +667,27 @@ model YouTubeVideo {
   @@map("youtube_videos")
 }
 
+model Hero {
+  id               String   @id @default(cuid())
+  title            String
+  subtitle         String?
+  description      String   @db.Text
+  image            String
+  ctaPrimaryText   String?
+  ctaPrimaryHref   String?
+  ctaSecondaryText String?
+  ctaSecondaryHref String?
+  displayOrder     Int      @default(0)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([displayOrder])
+  @@index([createdAt])
+  @@map("heroes")
+}
+
 enum YouTubeVideoCategory {
   WELCOME
   RESEARCH

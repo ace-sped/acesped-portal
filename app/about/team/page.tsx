@@ -203,10 +203,10 @@ export default function OurTeamPage() {
       
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-green-900 to-emerald-900 text-white py-20">
+        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
           <div className="absolute inset-0 bg-black/20"></div>
-          <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
+          <div className="relative page-shell w-full z-10">
+            <div className="text-center max-w-4xl mx-auto">
               <h1 className="text-5xl md:text-6xl font-bold mb-6">
                 Our Team
               </h1>
@@ -219,7 +219,7 @@ export default function OurTeamPage() {
 
         {/* Filters Section */}
         <section className="py-8 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-20 z-40">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
               {/* Category Filter */}
               <div className="flex flex-wrap gap-2">
@@ -259,7 +259,7 @@ export default function OurTeamPage() {
 
         {/* Team Members Grid */}
         <section className="py-16">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16">
                 <Loader2 className="h-12 w-12 text-green-600 animate-spin mb-4" />

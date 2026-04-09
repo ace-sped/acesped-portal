@@ -10,6 +10,7 @@ import {
 import { TbCurrencyNaira } from 'react-icons/tb';
 import Navbar from '@/app/components/navbar/page';
 import Footer from '@/app/components/footer/page';
+import { safeSessionStorageGet, safeSessionStorageRemove, safeSessionStorageSet } from '../../../../lib/safe-browser-storage';
 
 interface SubscriptionFormData {
   firstname: string;
@@ -163,8 +164,8 @@ export default function ProgramSubscriptionPage({
       // Store form data in sessionStorage before redirecting
       if (typeof window !== 'undefined') {
         try {
-          sessionStorage.setItem('subscriptionFormData', JSON.stringify(formData));
-          sessionStorage.setItem('subscriptionSlug', slug);
+          safeSessionStorageSet('subscriptionFormData', JSON.stringify(formData));
+          safeSessionStorageSet('subscriptionSlug', slug);
         } catch (storageError) {
           console.error('Error saving to sessionStorage:', storageError);
         }
@@ -235,8 +236,8 @@ export default function ProgramSubscriptionPage({
         setSubmitSuccess(true);
         // Clear sessionStorage
         if (typeof window !== 'undefined') {
-          sessionStorage.removeItem('subscriptionFormData');
-          sessionStorage.removeItem('subscriptionSlug');
+          safeSessionStorageRemove('subscriptionFormData');
+          safeSessionStorageRemove('subscriptionSlug');
         }
         setTimeout(() => {
           router.push(`/programs/${slug}`);
@@ -261,8 +262,8 @@ export default function ProgramSubscriptionPage({
 
       if (paymentCallback && reference) {
         // Restore form data from sessionStorage
-        const savedFormData = sessionStorage.getItem('subscriptionFormData');
-        const savedSlug = sessionStorage.getItem('subscriptionSlug');
+        const savedFormData = safeSessionStorageGet('subscriptionFormData');
+        const savedSlug = safeSessionStorageGet('subscriptionSlug');
 
         if (savedFormData && savedSlug === slug) {
           try {
@@ -291,7 +292,7 @@ export default function ProgramSubscriptionPage({
     setShowPaymentSuccessModal(false);
 
     try {
-      const savedFormData = sessionStorage.getItem('subscriptionFormData');
+      const savedFormData = safeSessionStorageGet('subscriptionFormData');
       if (!savedFormData) {
         setError('Form data not found. Please try again.');
         setSubmitting(false);
@@ -318,11 +319,11 @@ export default function ProgramSubscriptionPage({
         setSubmitSuccess(true);
         // Save course slug for learning page
         if (typeof window !== 'undefined') {
-          sessionStorage.setItem('subscribedCourseSlug', slug);
+          safeSessionStorageSet('subscribedCourseSlug', slug);
         }
         // Clear sessionStorage
-        sessionStorage.removeItem('subscriptionFormData');
-        sessionStorage.removeItem('subscriptionSlug');
+        safeSessionStorageRemove('subscriptionFormData');
+        safeSessionStorageRemove('subscriptionSlug');
         setTimeout(() => {
           router.push(`/learning?course=${slug}`);
         }, 3000);
@@ -485,7 +486,7 @@ export default function ProgramSubscriptionPage({
 
       {/* Breadcrumb Navigation */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="page-shell py-3 sm:py-4">
           <div className="flex flex-wrap items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             <button onClick={() => router.push('/')} className="hover:text-green-600 transition-colors">
               Home
@@ -505,10 +506,11 @@ export default function ProgramSubscriptionPage({
       </div>
 
       {/* Hero Section */}
-      <section className={`relative bg-gradient-to-br ${programColor} text-white py-12 sm:py-16 lg:py-20`}>
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className={`relative bg-gradient-to-br ${programColor} text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4`}>
+        <div className="page-shell w-full">
           <div className="max-w-4xl mx-auto text-center">
             <button
+              type="button"
               onClick={() => router.push(`/programs/${slug}`)}
               className="inline-flex items-center text-white/90 hover:text-white mb-6 transition-colors"
             >
@@ -527,8 +529,8 @@ export default function ProgramSubscriptionPage({
 
       {/* Program Info Card */}
       {program && (
-        <section className="py-8 -mt-8 relative z-10">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-8 -mt-4 relative z-10">
+          <div className="page-shell">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {program.duration && (

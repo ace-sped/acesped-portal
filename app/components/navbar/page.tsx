@@ -132,37 +132,43 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`sticky top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+      className={`sticky top-0 left-0 right-0 z-50 relative transition-all duration-300 ${isScrolled
         ? 'bg-white/95 backdrop-blur-md shadow-lg'
         : 'bg-white/90 backdrop-blur-sm shadow-md'
         }`}
     >
-      <div className="max-w-screen-2xl mx-auto px-1 sm:px-2 lg:px-1">
-        <div className="flex justify-between items-center h-30">
+      <div className="page-shell">
+        <div className="flex w-full items-center justify-between md:justify-start gap-2 sm:gap-3 py-2 sm:py-2.5 min-h-14 sm:min-h-[3.5rem]">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 group">
-            <div className="relative">
-              <img src="/images/ace-logo.png" alt="Ace-Sped" className="h-24 w-24 rounded-full object-contain text-white" />
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group min-w-0 shrink-0">
+            <div className="relative shrink-0">
+              <img
+                src="/images/ace-logo.png"
+                alt="Ace-Sped"
+                className="h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 lg:h-14 lg:w-14 rounded-full object-contain"
+              />
             </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-bold bg-linear-to-r from-green-800 to-emerald-800 bg-clip-text text-transparent">
+            <div className="flex flex-col min-w-0">
+              <span className="text-base sm:text-lg md:text-xl font-bold bg-linear-to-r from-green-800 to-emerald-800 bg-clip-text text-transparent truncate">
                 ACE-SPED
               </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
+          {/* Desktop Navigation — compact, right-aligned */}
+          <div className="hidden md:flex flex-1 min-w-0 items-center justify-end gap-0.5 lg:gap-1">
             {/* About Dropdown */}
             <div
               className="relative"
               onMouseEnter={handleAboutMouseEnter}
               onMouseLeave={handleAboutMouseLeave}
             >
-              <button className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors group">
-                {/* <FaUsers className="h-4 w-4 group-hover:scale-110 transition-transform" /> */}
-                <span className="font-medium">About</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${isAboutOpen ? 'rotate-180' : ''}`} />
+              <button
+                type="button"
+                className="flex items-center gap-1 px-2.5 py-1.5 lg:px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                <span>About</span>
+                <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isAboutOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Dropdown Menu */}
@@ -179,7 +185,7 @@ export default function Navbar() {
                           }
                           setIsAboutOpen(false);
                         }}
-                        className="w-full text-left block px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="w-full text-left block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       >
                         {item.name}
                       </button>
@@ -187,7 +193,7 @@ export default function Navbar() {
                       <a
                         key={item.name}
                         href={item.href}
-                        className="block px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       >
                         {item.name}
                       </a>
@@ -203,10 +209,12 @@ export default function Navbar() {
               onMouseEnter={handleAdmissionMouseEnter}
               onMouseLeave={handleAdmissionMouseLeave}
             >
-              <button className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors group">
-                {/* <FaGraduationCap className="h-4 w-4 group-hover:scale-110 transition-transform" /> */}
-                <span className="font-medium">Admission</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${isAdmissionOpen ? 'rotate-180' : ''}`} />
+              <button
+                type="button"
+                className="flex items-center gap-1 px-2.5 py-1.5 lg:px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                <span>Admission</span>
+                <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isAdmissionOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Dropdown Menu */}
@@ -223,7 +231,7 @@ export default function Navbar() {
                           }
                           setIsAdmissionOpen(false);
                         }}
-                        className="w-full text-left block px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="w-full text-left block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       >
                         {item.name}
                       </button>
@@ -231,7 +239,7 @@ export default function Navbar() {
                       <a
                         key={item.name}
                         href={item.href}
-                        className="block px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       >
                         {item.name}
                       </a>
@@ -247,10 +255,12 @@ export default function Navbar() {
               onMouseEnter={handleServicesMouseEnter}
               onMouseLeave={handleServicesMouseLeave}
             >
-              <button className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors group">
-                {/* <FaBookReader className="h-4 w-4 group-hover:scale-110 transition-transform" /> */}
-                <span className="font-medium">Services</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${isServicesOpen ? 'rotate-180' : ''}`} />
+              <button
+                type="button"
+                className="flex items-center gap-1 px-2.5 py-1.5 lg:px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                <span>Services</span>
+                <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isServicesOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Dropdown Menu */}
@@ -267,7 +277,7 @@ export default function Navbar() {
                           }
                           setIsServicesOpen(false);
                         }}
-                        className="w-full text-left block px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="w-full text-left block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       >
                         {item.name}
                       </button>
@@ -275,7 +285,7 @@ export default function Navbar() {
                       <a
                         key={item.name}
                         href={item.href}
-                        className="block px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       >
                         {item.name}
                       </a>
@@ -287,16 +297,14 @@ export default function Navbar() {
 
             {/* Links After Services */}
             {navLinksAfterServices.map((link) => {
-              const Icon = link.icon;
               if (link.href.startsWith('/')) {
                 return (
                   <Link
                     key={link.name}
                     href={link.href}
-                    className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors group"
+                    className="flex items-center px-2.5 py-1.5 lg:px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                   >
-                    {/* <Icon className="h-4 w-4 group-hover:scale-110 transition-transform" /> */}
-                    <span className="font-medium">{link.name}</span>
+                    <span>{link.name}</span>
                   </Link>
                 );
               }
@@ -304,25 +312,25 @@ export default function Navbar() {
                 <a
                   key={link.name}
                   href={link.href}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors group"
+                  className="flex items-center px-2.5 py-1.5 lg:px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  {/* <Icon className="h-4 w-4 group-hover:scale-110 transition-transform" /> */}
-                  <span className="font-medium">{link.name}</span>
+                  <span>{link.name}</span>
                 </a>
               );
             })}
 
             {/* Application Dropdown Button */}
             <div
-              className="relative ml-4"
+              className="relative ml-1.5 lg:ml-2"
               onMouseEnter={handleApplicationMouseEnter}
               onMouseLeave={handleApplicationMouseLeave}
             >
               <button
-                className="flex items-center space-x-2 px-6 py-2.5 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:shadow-lg hover:scale-105 transition-all duration-200"
+                type="button"
+                className="flex items-center gap-1 px-3 py-1.5 lg:px-3.5 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-md text-sm font-medium hover:shadow-md transition-shadow"
               >
                 <span>Application</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${isApplicationOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isApplicationOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Dropdown Menu */}
@@ -339,7 +347,7 @@ export default function Navbar() {
                           }
                           setIsApplicationOpen(false);
                         }}
-                        className="w-full text-left block px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="w-full text-left block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         {item.name}
                       </button>
@@ -347,7 +355,7 @@ export default function Navbar() {
                       <a
                         key={item.name}
                         href={item.href}
-                        className="block px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         {item.name}
                       </a>
@@ -358,8 +366,9 @@ export default function Navbar() {
             </div>
 
             <button
+              type="button"
               onClick={() => router.push('/students/login')}
-              className="ml-2 px-6 py-2.5 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:shadow-lg hover:scale-105 transition-all duration-200"
+              className="ml-1.5 shrink-0 px-3 py-1.5 lg:px-3.5 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-md text-sm font-medium hover:shadow-md transition-shadow"
             >
               Portal
             </button>
@@ -380,19 +389,19 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden absolute top-20 left-0 right-0 bg-white shadow-lg border-t border-gray-200">
-            <div className="px-4 py-6 space-y-3">
+          <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200">
+            <div className="px-3 py-4 space-y-2 text-sm">
               {/* Mobile About Dropdown */}
               <div>
                 <button
                   onClick={() => setIsMobileAboutOpen(!isMobileAboutOpen)}
-                  className="flex items-center justify-between w-full px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  <div className="flex items-center space-x-3">
-                    <FaUsers className="h-5 w-5" />
+                  <div className="flex items-center gap-2">
+                    <FaUsers className="h-4 w-4 shrink-0 opacity-80" />
                     <span className="font-medium">About</span>
                   </div>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isMobileAboutOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isMobileAboutOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {isMobileAboutOpen && (
@@ -406,7 +415,7 @@ export default function Navbar() {
                             setIsOpen(false);
                             setIsMobileAboutOpen(false);
                           }}
-                          className="w-full text-left block px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                          className="w-full text-left block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
                         >
                           {item.name}
                         </button>
@@ -414,7 +423,7 @@ export default function Navbar() {
                         <a
                           key={item.name}
                           href={item.href}
-                          className="block px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                          className="block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
                           onClick={() => {
                             setIsOpen(false);
                             setIsMobileAboutOpen(false);
@@ -432,13 +441,13 @@ export default function Navbar() {
               <div>
                 <button
                   onClick={() => setIsMobileAdmissionOpen(!isMobileAdmissionOpen)}
-                  className="flex items-center justify-between w-full px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  <div className="flex items-center space-x-3">
-                    <FaGraduationCap className="h-5 w-5" />
+                  <div className="flex items-center gap-2">
+                    <FaGraduationCap className="h-4 w-4 shrink-0 opacity-80" />
                     <span className="font-medium">Admission</span>
                   </div>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isMobileAdmissionOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isMobileAdmissionOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {isMobileAdmissionOpen && (
@@ -452,7 +461,7 @@ export default function Navbar() {
                             setIsOpen(false);
                             setIsMobileAdmissionOpen(false);
                           }}
-                          className="w-full text-left block px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                          className="w-full text-left block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
                         >
                           {item.name}
                         </button>
@@ -460,7 +469,7 @@ export default function Navbar() {
                         <a
                           key={item.name}
                           href={item.href}
-                          className="block px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                          className="block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
                           onClick={() => {
                             setIsOpen(false);
                             setIsMobileAdmissionOpen(false);
@@ -478,13 +487,13 @@ export default function Navbar() {
               <div>
                 <button
                   onClick={() => setIsMobileServicesOpen(!isMobileServicesOpen)}
-                  className="flex items-center justify-between w-full px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  <div className="flex items-center space-x-3">
-                    <FaBookReader className="h-5 w-5" />
+                  <div className="flex items-center gap-2">
+                    <FaBookReader className="h-4 w-4 shrink-0 opacity-80" />
                     <span className="font-medium">Services</span>
                   </div>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isMobileServicesOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isMobileServicesOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {isMobileServicesOpen && (
@@ -498,7 +507,7 @@ export default function Navbar() {
                             setIsOpen(false);
                             setIsMobileServicesOpen(false);
                           }}
-                          className="w-full text-left block px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                          className="w-full text-left block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
                         >
                           {item.name}
                         </button>
@@ -506,7 +515,7 @@ export default function Navbar() {
                         <a
                           key={item.name}
                           href={item.href}
-                          className="block px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                          className="block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
                           onClick={() => {
                             setIsOpen(false);
                             setIsMobileServicesOpen(false);
@@ -528,10 +537,10 @@ export default function Navbar() {
                     <Link
                       key={link.name}
                       href={link.href}
-                      className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-4 w-4 shrink-0 opacity-80" />
                       <span className="font-medium">{link.name}</span>
                     </Link>
                   );
@@ -540,10 +549,10 @@ export default function Navbar() {
                   <a
                     key={link.name}
                     href={link.href}
-                    className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-4 w-4 shrink-0 opacity-80" />
                     <span className="font-medium">{link.name}</span>
                   </a>
                 );
@@ -553,10 +562,10 @@ export default function Navbar() {
               <div>
                 <button
                   onClick={() => setIsMobileApplicationOpen(!isMobileApplicationOpen)}
-                  className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-linear-to-r from-green-600 to-emerald-600 text-white hover:opacity-90 transition-opacity"
+                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg bg-linear-to-r from-green-600 to-emerald-600 text-white hover:opacity-90 transition-opacity"
                 >
                   <span className="font-medium">Application</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isMobileApplicationOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isMobileApplicationOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {isMobileApplicationOpen && (
@@ -570,7 +579,7 @@ export default function Navbar() {
                             setIsOpen(false);
                             setIsMobileApplicationOpen(false);
                           }}
-                          className="w-full text-left block px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                          className="w-full text-left block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
                         >
                           {item.name}
                         </button>
@@ -578,7 +587,7 @@ export default function Navbar() {
                         <a
                           key={item.name}
                           href={item.href}
-                          className="block px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                          className="block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
                           onClick={() => {
                             setIsOpen(false);
                             setIsMobileApplicationOpen(false);
@@ -597,7 +606,7 @@ export default function Navbar() {
                   router.push('/students/login');
                   setIsOpen(false);
                 }}
-                className="w-full px-6 py-3 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                className="w-full px-4 py-2.5 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium text-sm hover:shadow-md transition-shadow"
               >
                 Portal
               </button>

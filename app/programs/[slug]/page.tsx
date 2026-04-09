@@ -121,7 +121,7 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navbar />
         <section className="py-20">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-12 w-12 text-green-600 animate-spin mb-4" />
               <p className="text-gray-600 dark:text-gray-400 text-lg">Loading program...</p>
@@ -140,7 +140,7 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
 
         {/* Breadcrumb */}
         <section className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <nav className="flex items-center space-x-2 text-sm">
               <Link
                 href="/"
@@ -263,7 +263,7 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
 
       {/* Breadcrumb */}
       <section className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <nav className="flex items-center space-x-2 text-sm">
             {breadcrumbItems.map((item, index) => (
               <React.Fragment key={index}>
@@ -285,8 +285,8 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
       </section>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-12 sm:py-16 lg:py-20">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
+        <div className="page-shell w-full">
           <div className="max-w-4xl mx-auto text-center">
             {/* Level Badge */}
             {program.level && (
@@ -316,8 +316,8 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
       </section>
 
       {/* Quick Info Cards */}
-      <section className="py-0 -mt-8 sm:-mt-12 relative z-10">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-0 -mt-4 sm:-mt-6 relative z-10">
+        <div className="page-shell">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-xl border border-gray-200 dark:border-gray-700 flex flex-col h-full">
               <div className="flex items-start">

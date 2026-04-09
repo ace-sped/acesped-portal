@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import Chatbot from "./components/chatbot/page";
+import BrowserPolyfills from "./components/browser-polyfills";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <BrowserPolyfills />
         <Toaster position="top-right" />
         <Chatbot />
       </body>

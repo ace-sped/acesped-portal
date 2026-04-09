@@ -47,16 +47,16 @@ export default function Footer() {
   return (
     <footer className="bg-gray-900 text-gray-300">
       {/* Main Footer Content */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="page-shell py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center space-x-3 group mb-6">
               <div className="relative">
-                <img src="/images/ace-logo.png" alt="Ace-Sped" className="h-20 w-20 rounded-full object-contain text-white" />
+                <img src="/images/ace-logo.png" alt="Ace-Sped" className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full object-contain" />
               </div>
               <div className="flex flex-col">
-                <span className="text-2xl font-bold text-white">
+                <span className="text-lg sm:text-xl md:text-2xl font-bold text-white">
                   ACE-SPED
                 </span>
               </div>

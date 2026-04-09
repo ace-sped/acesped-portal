@@ -111,8 +111,8 @@ export default function AboutPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white py-20">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
+        <div className="page-shell w-full">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
               About ACE-SPED
@@ -135,7 +135,7 @@ export default function AboutPage() {
 
       {/* Quick Stats */}
       <section className="py-16 bg-white dark:bg-gray-800">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {achievements.map((achievement, index) => {
               const Icon = achievement.icon;
@@ -159,7 +159,7 @@ export default function AboutPage() {
 
       {/* About Section */}
       <section className="py-20 bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="relative h-full">
               <div className="aspect-square bg-gradient-to-br from-green-900 to-emerald-900 rounded-3xl shadow-2xl flex items-center justify-center overflow-hidden">
@@ -193,7 +193,7 @@ export default function AboutPage() {
 
       {/* Mission & Vision */}
       <section className="py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl p-8 border border-blue-100 dark:border-blue-800">
               <div className="flex items-center mb-6">
@@ -231,7 +231,7 @@ export default function AboutPage() {
 
       {/* Thematic Areas */}
       <section className="py-20 bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Thematic Areas
@@ -267,7 +267,7 @@ export default function AboutPage() {
 
       {/* Core Values */}
       <section className="py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Our Core Values
@@ -305,7 +305,7 @@ export default function AboutPage() {
 
       {/* Location & Contact */}
       <section className="py-20 bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="page-shell">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div>
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">

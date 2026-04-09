@@ -176,7 +176,7 @@ export default function TeamDetailPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Back Button */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="page-shell py-4">
             <Link
               href="/about/team"
               className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
@@ -188,12 +188,12 @@ export default function TeamDetailPage() {
         </div>
 
         {/* Hero Section */}
-        <section className={`bg-gradient-to-br ${getRoleColor(member.role)} text-white py-16`}>
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+        <section className={`relative bg-gradient-to-br ${getRoleColor(member.role)} text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4 overflow-y-auto`}>
+          <div className="page-shell w-full">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-center max-w-5xl mx-auto">
               {/* Profile Image */}
               <div className="md:col-span-1">
-                <div className="relative w-64 h-64 mx-auto md:mx-0 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20">
+                <div className="relative w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-2xl overflow-hidden shadow-xl border-4 border-white/20">
                   {member.image && getImage(member.image) ? (
                     <Image
                       src={getImage(member.image)}
@@ -211,19 +211,19 @@ export default function TeamDetailPage() {
               </div>
 
               {/* Member Info */}
-              <div className="md:col-span-2 text-center md:text-left">
+              <div className="md:col-span-2 text-center">
                 <div className="inline-block px-4 py-2 bg-white/20 rounded-full text-sm font-medium mb-4">
                   {member.role}
                 </div>
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
                   {member.name}
                 </h1>
-                <p className="text-2xl text-white/90 mb-2">
+                <p className="text-lg sm:text-xl text-white/90 mb-2">
                   {member.title}
                 </p>
                 {member.department && (
-                  <p className="text-lg text-white/80 flex items-center justify-center md:justify-start">
-                    <Building className="h-5 w-5 mr-2" />
+                  <p className="text-lg text-white/80 flex items-center justify-center">
+                    <Building className="h-5 w-5 mr-2 shrink-0" />
                     {member.department}
                   </p>
                 )}
@@ -234,7 +234,7 @@ export default function TeamDetailPage() {
 
         {/* Main Content */}
         <section className="py-16">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="page-shell">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Main Content */}
               <div className="lg:col-span-2 space-y-8">

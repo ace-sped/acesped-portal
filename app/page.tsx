@@ -18,6 +18,21 @@ import {
   GraduationCap, Briefcase, Zap, Heart, Star, ChevronLeft, ChevronRight, Youtube, X, Lock
 } from 'lucide-react';
 
+const HOME_HERO_FALLBACK_SLIDES = [
+  {
+    title: "Research & Innovation",
+    subtitle: "Leading the Way",
+    description: "Discover groundbreaking research opportunities in sustainable energy, technology, and sciences. Be part of solutions that matter.",
+    image: Slide4 as string | StaticImageData,
+  },
+  {
+    title: "Research & Innovation",
+    subtitle: "Leading the Way",
+    description: "Discover groundbreaking research opportunities in sustainable energy, technology, and sciences. Be part of solutions that matter.",
+    image: Slide2 as string | StaticImageData,
+  },
+];
+
 export default function Home() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -27,22 +42,8 @@ export default function Home() {
   const [loadingServices, setLoadingServices] = useState(false);
   const [youtubeVideos, setYoutubeVideos] = useState<any[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
+  const [heroSlides, setHeroSlides] = useState(HOME_HERO_FALLBACK_SLIDES);
 
-
-  const heroSlides = [
-    {
-      title: "Research & Innovation",
-      subtitle: "Leading the Way",
-      description: "Discover groundbreaking research opportunities in sustainable energy, technology, and sciences. Be part of solutions that matter.",
-      image: Slide4,
-    },
-    {
-      title: "Research & Innovation",
-      subtitle: "Leading the Way",
-      description: "Discover groundbreaking research opportunities in sustainable energy, technology, and sciences. Be part of solutions that matter.",
-      image: Slide2,
-    },
-  ];
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
@@ -58,12 +59,40 @@ export default function Home() {
 
   // Auto-play functionality
   useEffect(() => {
+    if (!heroSlides.length) return;
     const interval = setInterval(() => {
       nextSlide();
     }, 5000); // Change slide every 5 seconds
 
     return () => clearInterval(interval);
-  }, [currentSlide]);
+  }, [currentSlide, heroSlides.length]);
+
+  // Fetch hero slides from database
+  useEffect(() => {
+    const fetchHeroSlides = async () => {
+      try {
+        const response = await fetch('/api/hero?isActive=true');
+        const data = await response.json();
+        if (data.success && Array.isArray(data.slides) && data.slides.length > 0) {
+          const mappedSlides = data.slides.map((slide: any) => ({
+            title: slide.title,
+            subtitle: slide.subtitle || '',
+            description: slide.description,
+            image: slide.image as string | StaticImageData,
+          }));
+          setHeroSlides(mappedSlides);
+          setCurrentSlide(0);
+        } else {
+          setHeroSlides(HOME_HERO_FALLBACK_SLIDES);
+        }
+      } catch (error) {
+        console.error('Error fetching hero slides:', error);
+        setHeroSlides(HOME_HERO_FALLBACK_SLIDES);
+      }
+    };
+
+    fetchHeroSlides();
+  }, []);
 
   // Fetch services data
   useEffect(() => {
@@ -285,74 +314,94 @@ export default function Home() {
     <div className="min-h-screen bg-gray-900 dark:bg-gray-900">
       <Navbar />
 
-      {/* Hero Section Slider */}
-      <section className="relative h-screen flex justify-center items-end overflow-hidden">
-        {/* Slider Wrapper */}
-        <div className="absolute inset-0 opacity-100">
+      {/* Hero: block layout (not flex) so absolute fill images get a definite height on mobile WebKit */}
+      <section className="relative isolate min-h-[calc(100svh-5rem)] sm:min-h-[calc(100svh-5.5rem)] overflow-hidden">
+        {/* Slider — full-bleed background */}
+        <div className="absolute inset-0 z-0 h-full w-full min-h-[calc(100svh-5rem)] sm:min-h-[calc(100svh-5.5rem)]">
           {heroSlides.map((slide, index) => (
             <div
               key={index}
-              className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'
+              className={`absolute inset-0 h-full w-full transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
             >
-              {/* Background Image */}
-              <div className="absolute inset-0">
+              <div className="absolute inset-0 overflow-hidden">
                 <Image
                   src={slide.image}
                   alt={slide.title}
                   fill
-                  className="object-cover"
+                  sizes="100vw"
                   priority={index === 0}
+                  quality={90}
+                  className="object-cover object-[center_30%] sm:object-center"
                 />
-                <div className="absolute inset-0 bg-linear-to-br from-gray-900/40 via-gray-900/40 to-gray-900/40"></div>
+                <div className="absolute inset-0 bg-linear-to-t from-gray-950/90 via-gray-900/50 to-gray-900/30 sm:bg-linear-to-br sm:from-gray-900/50 sm:via-gray-900/40 sm:to-gray-900/50" />
               </div>
 
-              {/* Animated Background Elements */}
-              <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 -right-40 w-80 h-80  rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80  rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
               </div>
             </div>
           ))}
         </div>
 
-        {/* Content */}
-        <div className="relativ max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center z-10">
-          <div className="transition-all duration-500">
-            <div className="flex  sm:flex-row gap-4">
+        {/* Content column: min-height matches hero so layout height is stable; justify-end keeps copy near bottom */}
+        <div className="relative z-10 flex min-h-[calc(100svh-5rem)] sm:min-h-[calc(100svh-5.5rem)] w-full flex-col justify-end pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 text-center pt-6 sm:pt-10 pb-14 sm:pb-16 md:pb-20">
+          <div
+            key={currentSlide}
+            className="transition-all duration-500 animate-in fade-in slide-in-from-bottom-2"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200/95 sm:text-sm">
+              {heroSlides[currentSlide].subtitle}
+            </p>
+            <h1 className="mt-2 text-2xl font-bold leading-tight text-white sm:text-3xl md:text-4xl lg:text-5xl text-balance">
+              {heroSlides[currentSlide].title}
+            </h1>
+            <p className="mt-3 max-w-2xl mx-auto text-gray-100/95 text-sm leading-relaxed sm:text-base md:text-lg px-0 sm:px-2 text-pretty line-clamp-4 sm:line-clamp-none">
+              {heroSlides[currentSlide].description}
+            </p>
+            <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
               <button
+                type="button"
                 onClick={() => router.push('/services')}
-                className="px-8 py-4 bg-white text-green-800 rounded-xl font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 flex items-center group"
+                className="inline-flex w-full sm:w-auto items-center justify-center px-5 py-3 sm:px-6 sm:py-3 bg-white text-green-800 rounded-lg font-semibold text-sm sm:text-base hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group shrink-0"
               >
                 Apply Now
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform shrink-0" />
               </button>
-              <button className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold text-lg hover:bg-white hover:text-green-800 transition-all duration-200">
+              <button
+                type="button"
+                className="inline-flex w-full sm:w-auto items-center justify-center px-5 py-3 sm:px-6 sm:py-3 bg-transparent border-2 border-white text-white rounded-lg font-semibold text-sm sm:text-base hover:bg-white hover:text-green-800 transition-all duration-200 shrink-0"
+              >
                 Virtual Tour
               </button>
             </div>
+          </div>
           </div>
         </div>
 
         {/* Navigation Arrows */}
         <button
+          type="button"
           onClick={prevSlide}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white p-3 rounded-full transition-all hover:scale-110 border border-white/20"
+          className="absolute left-2 top-1/2 -translate-y-1/2 sm:left-4 z-20 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white p-2 sm:p-3 rounded-full transition-all hover:scale-110 border border-white/20 touch-manipulation"
           aria-label="Previous slide"
         >
-          <ChevronLeft className="h-6 w-6" />
+          <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
         <button
+          type="button"
           onClick={nextSlide}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white p-3 rounded-full transition-all hover:scale-110 border border-white/20"
+          className="absolute right-2 top-1/2 -translate-y-1/2 sm:right-4 z-20 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white p-2 sm:p-3 rounded-full transition-all hover:scale-110 border border-white/20 touch-manipulation"
           aria-label="Next slide"
         >
-          <ChevronRight className="h-6 w-6" />
+          <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
 
         {/* Slide Indicators */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+        <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2 pb-[env(safe-area-inset-bottom)]">
           {heroSlides.map((_, index) => (
             <button
               key={index}
@@ -368,27 +417,27 @@ export default function Home() {
       </section>
 
       {/* AboutUs Section */}
-      <section id="about" className="py-24 bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <section id="about" className="py-12 md:py-16 lg:py-20 bg-gray-50 dark:bg-gray-950">
+        <div className="page-shell">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-center">
             <div className="relative h-full">
-              <div className="aspect-square bg-linear-to-br from-green-900 to-emerald-900 rounded-3xl shadow-2xl flex items-center justify-center">
+              <div className="aspect-square max-w-md mx-auto lg:max-w-none bg-linear-to-br from-green-900 to-emerald-900 rounded-2xl shadow-xl flex items-center justify-center">
                 <Image src={Acesped} alt="Research" fill className="object-cover" />
               </div>
             </div>
 
             <div>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
                 About ACE-SPED
               </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+              <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
                 Africa Centre of Excellence for Sustainable Power and Energy Development (ACE-SPED),
                 is a World Bank assisted project domiciled at the University of Nigeria, Nsukka.
                 The Centre was conceptualized to proffer sustainable solutions to some developmental
                 challenges peculiar to the Sub-Saharan Africa region.
               </p>
               <p>The fundamental aim of ACE-SPED is to carry out impactful educational research development and training activities in five major thematic areas:</p>
-              <ul className="space-y-4 mb-8 mt-4">
+              <ul className="space-y-2.5 mb-6 mt-3 text-sm md:text-base">
                 {[
                   'Electric power systems development',
                   'Renewable energy, waste-to-energy and energy conservation',
@@ -404,10 +453,10 @@ export default function Home() {
               </ul>
               <button
                 onClick={() => router.push('/about')}
-                className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-semibold hover:shadow-xl transition-all flex items-center group"
+                className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg text-sm font-semibold hover:shadow-lg transition-all inline-flex items-center group"
               >
                 More About Us
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
 
@@ -417,42 +466,42 @@ export default function Home() {
       </section>
 
       {/* Programs Section */}
-      <section id="programs" className="py-24 bg-white dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+      <section id="programs" className="py-12 md:py-16 lg:py-20 bg-white dark:bg-gray-900">
+        <div className="page-shell">
+          <div className="text-center mb-10 md:mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
               Our Programs
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Discover world-class programs designed to prepare you for success in your chosen field
             </p>
           </div>
 
           {loadingServices ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">Loading programs...</p>
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading programs...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
               {programs.map((program, index) => {
                 const Icon = program.icon;
                 return (
                   <div
                     key={index}
-                    className="group relative bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden"
+                    className="group relative bg-gray-50 dark:bg-gray-800 rounded-xl p-5 md:p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
                   >
-                    <div className={`absolute top-0 right-0 w-32 h-32 bg-linear-to-br ${program.color} rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity`}></div>
+                    <div className={`absolute top-0 right-0 w-28 h-28 bg-linear-to-br ${program.color} rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity`}></div>
 
                     <div className="relative">
-                      <div className={`inline-flex p-4 bg-linear-to-br ${program.color} rounded-xl mb-6 shadow-lg`}>
-                        <Icon className="h-8 w-8 text-white" />
+                      <div className={`inline-flex p-3 bg-linear-to-br ${program.color} rounded-lg mb-4 shadow-md`}>
+                        <Icon className="h-6 w-6 md:h-7 md:w-7 text-white" />
                       </div>
 
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                      <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-2">
                         {program.title}
                       </h3>
 
-                      <p className="text-gray-600 dark:text-gray-400 mb-6">
+                      <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-4">
                         {program.description}
                       </p>
 
@@ -478,28 +527,28 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-24 bg-linear-to-br from-green-900 to-emerald-900 text-white">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+      <section className="py-12 md:py-16 lg:py-20 bg-linear-to-br from-green-900 to-emerald-900 text-white">
+        <div className="page-shell">
+          <div className="text-center mb-10 md:mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">
               WHY CHOOSE ACE-SPED?
             </h2>
-            <p className="text-xl text-green-100 max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-green-100 max-w-2xl mx-auto">
               We provide more than education - we provide a launchpad for your dreams
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
                 <div
                   key={index}
-                  className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/20 transition-all hover:scale-105"
+                  className="bg-white/10 backdrop-blur-sm rounded-xl p-4 md:p-5 hover:bg-white/20 transition-all hover:scale-[1.02]"
                 >
-                  <Icon className="h-12 w-12 mb-4" />
-                  <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                  <p className="text-green-100">{feature.description}</p>
+                  <Icon className="h-9 w-9 md:h-10 md:w-10 mb-3" />
+                  <h3 className="text-base md:text-lg font-bold mb-2">{feature.title}</h3>
+                  <p className="text-sm text-green-100 leading-snug">{feature.description}</p>
                 </div>
               );
             })}
@@ -508,34 +557,34 @@ export default function Home() {
       </section>
 
       {/* YouTube Section */}
-      <section className="py-24 bg-white dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center justify-center p-3 bg-red-100 dark:bg-red-900/30 rounded-full mb-4">
-              <Youtube className="h-8 w-8 text-red-600 dark:text-red-400" />
+      <section className="py-12 md:py-16 lg:py-20 bg-white dark:bg-gray-900">
+        <div className="page-shell">
+          <div className="text-center mb-10 md:mb-12">
+            <div className="inline-flex items-center justify-center p-2 bg-red-100 dark:bg-red-900/30 rounded-full mb-3">
+              <Youtube className="h-6 w-6 md:h-7 md:w-7 text-red-600 dark:text-red-400" />
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
               Watch Our Videos
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Explore our campus, programs, and achievements through our video content
             </p>
           </div>
 
           {loadingVideos ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">Loading videos...</p>
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading videos...</p>
             </div>
           ) : youtubeVideos.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">No videos available at the moment.</p>
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500 dark:text-gray-400">No videos available at the moment.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
               {youtubeVideos.map((video, index) => (
                 <div
                   key={video.id}
-                  className="group relative bg-gray-50 dark:bg-gray-800 rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+                  className="group relative bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 >
                   <div className="relative aspect-video bg-gray-900">
                     <iframe
@@ -546,8 +595,8 @@ export default function Home() {
                       allowFullScreen
                     ></iframe>
                   </div>
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div className="p-4 md:p-5">
+                    <div className="flex items-center gap-2 mb-1.5">
                       {video.isFeatured && (
                         <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded text-xs font-medium">
                           Featured
@@ -557,7 +606,7 @@ export default function Home() {
                         {video.category.replace('_', ' ')}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                    <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-1.5">
                       {video.title}
                     </h3>
                     {video.description && (
@@ -587,17 +636,17 @@ export default function Home() {
       </section>
 
       {/* Research Section */}
-      <section id="research" className="py-24 bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <section id="research" className="py-12 md:py-16 lg:py-20 bg-gray-50 dark:bg-gray-950">
+        <div className="page-shell">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-center">
             <div>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
                 Leading Research & Innovation
               </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+              <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
                 Our research centers are at the forefront of scientific discovery and technological innovation. With over $100M in annual research funding, we're solving real-world problems and shaping the future.
               </p>
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-2.5 mb-6 text-sm md:text-base">
                 {[
                   'AI & Machine Learning Research Center',
                   'Sustainable Energy Laboratory',
@@ -612,15 +661,15 @@ export default function Home() {
               </ul>
               <button
                 onClick={() => router.push('/research')}
-                className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-semibold hover:shadow-xl transition-all flex items-center group"
+                className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg text-sm font-semibold hover:shadow-lg transition-all inline-flex items-center group"
               >
                 Explore Research
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
 
             <div className="relative">
-              <div className="aspect-square bg-linear-to-br from-green-900 to-emerald-900 rounded-3xl shadow-2xl flex items-center justify-center">
+              <div className="aspect-square max-w-md mx-auto lg:max-w-none bg-linear-to-br from-green-900 to-emerald-900 rounded-2xl shadow-xl flex items-center justify-center">
                 <Image src={Image4} alt="Research" fill className="object-cover" />
               </div>
             </div>
@@ -629,59 +678,59 @@ export default function Home() {
       </section>
 
       {/* Projects Section */}
-      <section id="projects" className="relative py-24 bg-linear-to-r from-gray-900 via-green-900 to-emerald-900 text-white overflow-hidden">
+      <section id="projects" className="relative py-12 md:py-16 lg:py-20 bg-linear-to-r from-gray-900 via-green-900 to-emerald-900 text-white overflow-hidden">
         {/* Abstract Background Shapes */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-green-500 rounded-full mix-blend-overlay filter blur-[128px] opacity-20"></div>
           <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-emerald-500 rounded-full mix-blend-overlay filter blur-[128px] opacity-20"></div>
         </div>
 
-        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-6xl font-bold mb-8 tracking-tight">
+        <div className="relative z-10 page-shell text-center">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-5 tracking-tight">
             Our Projects
           </h2>
-          <div className="text-xl md:text-2xl text-green-50 mb-12 leading-relaxed font-light">
+          <div className="text-base md:text-lg text-green-50 mb-8 max-w-3xl mx-auto leading-relaxed font-light">
             <p>
               Ace-Sped Projects showcase innovative, practical solutions across technology, engineering, and professional development fields. These projects are designed for learning, collaboration, and real-world impact.
             </p>
           </div>
           <button
             onClick={() => router.push('/projects')}
-            className="px-10 py-5 bg-white text-green-900 rounded-[20px] font-bold text-lg hover:bg-green-50 hover:shadow-2xl hover:scale-105 transition-all duration-300 inline-flex items-center group"
+            className="px-6 py-3 bg-white text-green-900 rounded-xl font-semibold text-sm md:text-base hover:bg-green-50 hover:shadow-lg transition-all duration-300 inline-flex items-center group"
           >
             Explore Projects
-            <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
       </section>
 
       {/* News & Events Section */}
-      <section id="news" className="py-24 bg-white dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+      <section id="news" className="py-12 md:py-16 lg:py-20 bg-white dark:bg-gray-900">
+        <div className="page-shell">
+          <div className="text-center mb-10 md:mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
               Latest News & Events
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Stay updated with the latest happenings, achievements, and upcoming events
             </p>
           </div>
 
           {loadingNews ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">Loading news...</p>
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading news...</p>
             </div>
           ) : displayNews.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">No news available at the moment.</p>
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500 dark:text-gray-400">No news available at the moment.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
               {displayNews.map((item, index) => (
                 <div
                   key={item.slug || index}
                   onClick={() => item.slug && router.push(`/news/${item.slug}`)}
-                  className="group bg-gray-50 dark:bg-gray-800 rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer"
+                  className="group bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
                 >
                   <div className="relative aspect-video bg-linear-to-br from-green-500 to-emerald-600">
                     <Image
@@ -692,8 +741,8 @@ export default function Home() {
                       unoptimized={isUnoptimizedImage(item.image)}
                     />
                   </div>
-                  <div className="p-6">
-                    <div className="flex items-center mb-3">
+                  <div className="p-4 md:p-5">
+                    <div className="flex items-center mb-2">
                       <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 rounded-full text-sm font-medium">
                         {item.category}
                       </span>
@@ -702,10 +751,10 @@ export default function Home() {
                         {item.date}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                    <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                       {item.title}
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-3">
                       {item.excerpt}
                     </p>
                     <button className="text-green-600 dark:text-green-400 font-semibold flex items-center group-hover:gap-2 transition-all">
@@ -721,28 +770,30 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-linear-to-r from-green-900 to-emerald-900 text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+      <section className="py-12 md:py-16 lg:py-20 bg-linear-to-r from-green-900 to-emerald-900 text-white">
+        <div className="page-shell">
+          <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to Start Your Journey?
           </h2>
-          <p className="text-xl text-green-100 mb-12 leading-relaxed">
+          <p className="text-base md:text-lg text-green-100 mb-8 leading-relaxed">
             Join thousands of students who have transformed their lives at AcademiaHub. Your future starts here.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={() => router.push('/services')}
-              className="px-8 py-4 bg-white text-green-800 rounded-xl font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 flex items-center group"
+              className="w-full sm:w-auto px-6 py-3 bg-white text-green-800 rounded-lg font-semibold text-sm md:text-base hover:shadow-lg transition-all duration-200 inline-flex items-center justify-center group"
             >
               Apply for Admission
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
               onClick={() => router.push('/contact')}
-              className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold text-lg hover:bg-white hover:text-green-800 transition-all duration-200"
+              className="w-full sm:w-auto px-6 py-3 bg-transparent border-2 border-white text-white rounded-lg font-semibold text-sm md:text-base hover:bg-white hover:text-green-800 transition-all duration-200"
             >
               Schedule a Visit
             </button>
+          </div>
           </div>
         </div>
       </section>
