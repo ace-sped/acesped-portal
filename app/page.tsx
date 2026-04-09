@@ -10,8 +10,6 @@ import Image2 from '@/public/images/news/2.jpg';
 import Image3 from '@/public/images/news/3.jpg';
 import Image4 from '@/public/images/lab.jpg';
 import Acesped from '@/public/images/acesped.png';
-import Slide2 from '@/public/images/caroucel/slide2.png';
-import Slide4 from '@/public/images/caroucel/slide4.png';
 import {
   BookOpen, Users, Award, TrendingUp, Microscope, Globe,
   Lightbulb, Target, ArrowRight, Calendar, MapPin, Clock,
@@ -22,35 +20,13 @@ type HeroSlide = {
   title: string;
   subtitle?: string;
   description: string;
-  image: string | StaticImageData;
+  image: string;
   ctaPrimaryText?: string;
   ctaPrimaryHref?: string;
   ctaSecondaryText?: string;
   ctaSecondaryHref?: string;
 };
 
-const HOME_HERO_FALLBACK_SLIDES: HeroSlide[] = [
-  {
-    title: "Sustainable Power & Energy Development",
-    subtitle: "ACE-SPED — University of Nigeria, Nsukka",
-    description: "A World Bank assisted Centre of Excellence driving impactful research in renewable energy, power systems, and sustainable energy materials across Sub-Saharan Africa.",
-    image: Slide4 as string | StaticImageData,
-    ctaPrimaryText: "Explore Programs",
-    ctaPrimaryHref: "/services",
-    ctaSecondaryText: "Learn More",
-    ctaSecondaryHref: "/about",
-  },
-  {
-    title: "Research, Innovation & Training",
-    subtitle: "Building Africa's Energy Future",
-    description: "Discover graduate programs, vocational training, and research opportunities in electric power, renewable energy, and energy policy that shape tomorrow's solutions.",
-    image: Slide2 as string | StaticImageData,
-    ctaPrimaryText: "Apply Now",
-    ctaPrimaryHref: "/services",
-    ctaSecondaryText: "Our Research",
-    ctaSecondaryHref: "/research",
-  },
-];
 
 export default function Home() {
   const router = useRouter();
@@ -61,7 +37,7 @@ export default function Home() {
   const [loadingServices, setLoadingServices] = useState(false);
   const [youtubeVideos, setYoutubeVideos] = useState<any[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
-  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(HOME_HERO_FALLBACK_SLIDES);
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
   const [heroLoading, setHeroLoading] = useState(true);
 
 
@@ -93,12 +69,12 @@ export default function Home() {
       try {
         const response = await fetch('/api/hero?isActive=true');
         const data = await response.json();
-        if (data.success && Array.isArray(data.slides) && data.slides.length > 0) {
+        if (data.success && Array.isArray(data.slides)) {
           const mappedSlides: HeroSlide[] = data.slides.map((slide: any) => ({
             title: slide.title,
             subtitle: slide.subtitle ?? '',
             description: slide.description,
-            image: slide.image as string | StaticImageData,
+            image: slide.image as string,
             ctaPrimaryText: slide.ctaPrimaryText ?? undefined,
             ctaPrimaryHref: slide.ctaPrimaryHref ?? undefined,
             ctaSecondaryText: slide.ctaSecondaryText ?? undefined,
@@ -106,12 +82,9 @@ export default function Home() {
           }));
           setHeroSlides(mappedSlides);
           setCurrentSlide(0);
-        } else {
-          setHeroSlides(HOME_HERO_FALLBACK_SLIDES);
         }
       } catch (error) {
         console.error('Error fetching hero slides:', error);
-        setHeroSlides(HOME_HERO_FALLBACK_SLIDES);
       } finally {
         setHeroLoading(false);
       }
@@ -341,6 +314,7 @@ export default function Home() {
       <Navbar />
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
+      {(heroLoading || heroSlides.length > 0) && (
       <section className="relative isolate min-h-[calc(100svh-5rem)] sm:min-h-[calc(100svh-5.5rem)] overflow-hidden bg-gray-950">
 
         {/* ── Background slides ── */}
@@ -379,62 +353,58 @@ export default function Home() {
         <div className="relative z-10 flex min-h-[calc(100svh-5rem)] sm:min-h-[calc(100svh-5.5rem)] flex-col">
 
           {/* Centered slide copy */}
-          <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pt-16 pb-4">
-            <div className="w-full max-w-3xl text-center">
+          {/* Bottom-aligned content — sits above the stats bar without blocking the image */}
+          <div className="flex-1 flex items-end justify-center px-4 sm:px-6 pt-16 pb-4">
+            <div className="w-full max-w-2xl text-center">
               {heroLoading ? (
-                /* Skeleton while first fetch is in flight */
-                <div className="space-y-4 animate-pulse">
-                  <div className="h-4 w-48 bg-white/20 rounded-full mx-auto" />
-                  <div className="h-10 w-3/4 bg-white/20 rounded-lg mx-auto" />
-                  <div className="h-4 w-2/3 bg-white/10 rounded mx-auto" />
-                  <div className="h-4 w-1/2 bg-white/10 rounded mx-auto" />
-                  <div className="flex gap-3 justify-center pt-2">
-                    <div className="h-11 w-32 bg-white/20 rounded-lg" />
-                    <div className="h-11 w-32 bg-white/10 rounded-lg" />
+                <div className="space-y-3 animate-pulse pb-2">
+                  <div className="h-3 w-36 bg-white/20 rounded-full mx-auto" />
+                  <div className="h-7 w-3/4 bg-white/20 rounded-lg mx-auto" />
+                  <div className="h-3 w-2/3 bg-white/10 rounded mx-auto" />
+                  <div className="flex gap-2 justify-center pt-1">
+                    <div className="h-8 w-24 bg-white/20 rounded-lg" />
+                    <div className="h-8 w-24 bg-white/10 rounded-lg" />
                   </div>
                 </div>
               ) : (
                 <div
                   key={currentSlide}
-                  className="animate-in fade-in slide-in-from-bottom-4 duration-700"
+                  className="animate-in fade-in slide-in-from-bottom-3 duration-700"
                 >
                   {/* Subtitle badge */}
                   {heroSlides[currentSlide]?.subtitle && (
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 backdrop-blur-sm mb-4">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-emerald-300">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 backdrop-blur-sm mb-2.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                      <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-emerald-300">
                         {heroSlides[currentSlide].subtitle}
                       </span>
                     </div>
                   )}
 
                   {/* Title */}
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-white text-balance drop-shadow-lg">
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold leading-snug text-white text-balance drop-shadow-md">
                     {heroSlides[currentSlide]?.title}
                   </h1>
 
-                  {/* Divider accent */}
-                  <div className="mx-auto mt-4 mb-4 h-1 w-16 rounded-full bg-gradient-to-r from-emerald-400 to-green-300" />
-
                   {/* Description */}
-                  <p className="max-w-2xl mx-auto text-gray-200/90 text-sm sm:text-base md:text-lg leading-relaxed text-pretty line-clamp-3 sm:line-clamp-none">
+                  <p className="mt-2 max-w-xl mx-auto text-gray-200/85 text-xs sm:text-sm leading-relaxed text-pretty line-clamp-2">
                     {heroSlides[currentSlide]?.description}
                   </p>
 
-                  {/* CTA buttons — per-slide from DB, fallback to defaults */}
-                  <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                  {/* CTA buttons */}
+                  <div className="mt-4 flex flex-row flex-wrap justify-center gap-2">
                     <button
                       type="button"
                       onClick={() => router.push(heroSlides[currentSlide]?.ctaPrimaryHref || '/services')}
-                      className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-semibold text-sm sm:text-base shadow-lg shadow-emerald-900/40 hover:shadow-emerald-900/60 hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 group"
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg font-semibold text-xs sm:text-sm shadow-lg shadow-emerald-900/40 hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 group"
                     >
                       {heroSlides[currentSlide]?.ctaPrimaryText || 'Explore Programs'}
-                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform shrink-0" />
+                      <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform shrink-0" />
                     </button>
                     <button
                       type="button"
                       onClick={() => router.push(heroSlides[currentSlide]?.ctaSecondaryHref || '/about')}
-                      className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/30 hover:border-white/50 text-white rounded-xl font-semibold text-sm sm:text-base backdrop-blur-sm transition-all duration-200"
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/30 hover:border-white/50 text-white rounded-lg font-semibold text-xs sm:text-sm backdrop-blur-sm transition-all duration-200"
                     >
                       {heroSlides[currentSlide]?.ctaSecondaryText || 'Learn More'}
                     </button>
@@ -503,6 +473,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {/* AboutUs Section */}
       <section id="about" className="py-12 md:py-16 lg:py-20 bg-gray-50 dark:bg-gray-950">
