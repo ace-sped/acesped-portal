@@ -337,16 +337,16 @@ export default function Home() {
                 style={index === currentSlide ? { transform: 'scale(1)' } : {}}
               />
               {/* Multi-layer gradient for depth */}
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-gray-950/20" />
-              <div className="absolute inset-0 bg-gradient-to-r from-gray-950/50 via-transparent to-gray-950/20" />
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-gray-950/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-950/25 via-transparent to-transparent" />
             </div>
           ))}
         </div>
 
         {/* ── Decorative orbs ── */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-green-500/10 rounded-full blur-3xl animate-pulse [animation-delay:2s]" />
+          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-emerald-400/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-green-400/20 rounded-full blur-3xl animate-pulse [animation-delay:2s]" />
         </div>
 
         {/* ── Main content ── */}

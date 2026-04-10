@@ -281,7 +281,7 @@ export default function UserManagement() {
 
       setLoading(true);
       try {
-        const sigResponse = await fetch('/api/upload/signature?folder=users/avatars');
+        const sigResponse = await fetch(`/api/upload/signature?folder=users/avatars&timestamp=${Math.round(Date.now()/1000)}`);
         const sigData = await sigResponse.json();
 
         if (!sigData.success) throw new Error('Failed to get signature');
@@ -338,7 +338,7 @@ export default function UserManagement() {
 
       setLoading(true);
       try {
-        const sigResponse = await fetch('/api/upload/signature?folder=users/signatures');
+        const sigResponse = await fetch(`/api/upload/signature?folder=users/signatures&timestamp=${Math.round(Date.now()/1000)}`);
         const sigData = await sigResponse.json();
 
         if (!sigData.success) throw new Error('Failed to get signature');

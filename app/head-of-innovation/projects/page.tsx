@@ -147,9 +147,10 @@ export default function HeadOfInnovationProjects() {
             }
 
             // Step 1: Get a signed upload signature from our backend
+            const _ts = Math.round(Date.now()/1000);
             const sigUrl = type === 'video'
-                ? `/api/upload/signature?folder=projects&resourceType=video`
-                : `/api/upload/signature?folder=projects`;
+                ? `/api/upload/signature?folder=projects&resourceType=video&timestamp=${_ts}`
+                : `/api/upload/signature?folder=projects&timestamp=${_ts}`;
             const sigResponse = await fetch(sigUrl);
             const sigData = await sigResponse.json();
 

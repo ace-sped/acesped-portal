@@ -569,7 +569,7 @@ export default function ProgramsManagement() {
   const handleBrochureUpload = async (file: File): Promise<string> => {
     try {
       // Step 1: Get a signed upload signature from our backend
-      const sigResponse = await fetch(`/api/upload/signature?folder=programs/brochures`);
+      const sigResponse = await fetch(`/api/upload/signature?folder=programs/brochures&timestamp=${Math.round(Date.now()/1000)}`);
       const sigData = await sigResponse.json();
 
       if (!sigData.success) {

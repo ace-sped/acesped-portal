@@ -358,7 +358,7 @@ export default function SkillApplicationPage() {
     setLoading(true);
     try {
       // Step 1: Get signed upload signature
-      const sigResponse = await fetch('/api/upload/signature?folder=skill-applications/avatars');
+      const sigResponse = await fetch(`/api/upload/signature?folder=skill-applications/avatars&timestamp=${Math.round(Date.now()/1000)}`);
       const sigData = await sigResponse.json();
 
       if (!sigData.success) {

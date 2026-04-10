@@ -134,7 +134,7 @@ export default function NewsManagement() {
     setLoading(true);
     try {
       // Step 1: Get signature
-      const sigResponse = await fetch('/api/upload/signature?folder=news');
+      const sigResponse = await fetch(`/api/upload/signature?folder=news&timestamp=${Math.round(Date.now()/1000)}`);
       const sigData = await sigResponse.json();
 
       if (!sigData.success) throw new Error('Failed to get signature');
@@ -161,7 +161,7 @@ export default function NewsManagement() {
         setFormData({ ...formData, image: path });
         setImagePreview(path);
       } else {
-        throw new Error(data.message || 'Upload failed');
+        throw new Error(data.error?.message || data.message || 'Upload failed');
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -184,7 +184,7 @@ export default function NewsManagement() {
 
     setLoading(true);
     try {
-      const sigResponse = await fetch('/api/upload/signature?folder=news/gallery');
+      const sigResponse = await fetch(`/api/upload/signature?folder=news/gallery&timestamp=${Math.round(Date.now()/1000)}`);
       const sigData = await sigResponse.json();
 
       if (!sigData.success) throw new Error('Failed to get signature');

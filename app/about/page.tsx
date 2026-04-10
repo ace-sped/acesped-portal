@@ -111,7 +111,7 @@ export default function AboutPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
+      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white min-h-[50vh] flex flex-col justify-center items-center py-16">
         <div className="page-shell w-full">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl md:text-6xl font-bold mb-6">

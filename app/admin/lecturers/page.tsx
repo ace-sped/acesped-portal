@@ -190,7 +190,7 @@ export default function LecturerManagement() {
             setLoading(true);
             try {
                 // Step 1: Get signature
-                const sigResponse = await fetch('/api/upload/signature?folder=lecturers');
+                const sigResponse = await fetch(`/api/upload/signature?folder=lecturers&timestamp=${Math.round(Date.now()/1000)}`);
                 const sigData = await sigResponse.json();
 
                 if (!sigData.success) throw new Error('Failed to get signature');

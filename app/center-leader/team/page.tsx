@@ -362,7 +362,7 @@ export default function TeamManagement() {
     setLoading(true);
     try {
       // Step 1: Get signature
-      const sigResponse = await fetch('/api/upload/signature?folder=team');
+      const sigResponse = await fetch(`/api/upload/signature?folder=team&timestamp=${Math.round(Date.now()/1000)}`);
       const sigData = await sigResponse.json();
 
       if (!sigData.success) throw new Error('Failed to get signature');

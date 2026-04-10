@@ -91,7 +91,7 @@ export default function ICTDLIsPage() {
           const data = await uploadResponse.json();
 
           if (!uploadResponse.ok || !data.success) {
-            throw new Error(data.message || 'Upload failed');
+            throw new Error(data.error?.message || data.message || 'Upload failed');
           }
           newFilesPayload.push({ url: data.path, fileLabel: row.fileLabel || undefined });
         }
@@ -177,7 +177,7 @@ export default function ICTDLIsPage() {
           const data = await uploadResponse.json();
 
           if (!uploadResponse.ok || !data.success) {
-            throw new Error(data.message || 'Upload failed');
+            throw new Error(data.error?.message || data.message || 'Upload failed');
           }
           filesPayload.push({ url: data.path, fileLabel: row.fileLabel || undefined });
         }

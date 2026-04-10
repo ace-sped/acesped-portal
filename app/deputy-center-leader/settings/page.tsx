@@ -146,7 +146,7 @@ export default function SettingsPage() {
       setUpdatingAvatar(true);
       try {
         // Step 1: Get signature
-        const sigResponse = await fetch('/api/upload/signature?folder=profiles');
+        const sigResponse = await fetch(`/api/upload/signature?folder=profiles&timestamp=${Math.round(Date.now()/1000)}`);
         const sigData = await sigResponse.json();
 
         if (!sigData.success) throw new Error('Failed to get signature');
@@ -173,7 +173,7 @@ export default function SettingsPage() {
           setAvatarPreview(path);
           setShowAvatarSave(true);
         } else {
-          throw new Error(data.message || 'Upload failed');
+          throw new Error(data.error?.message || data.message || 'Upload failed');
         }
       } catch (error) {
         console.error('Avatar upload error:', error);

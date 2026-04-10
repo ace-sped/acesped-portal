@@ -646,7 +646,7 @@ export default function ApplicationPage() {
     try {
       // Step 1: Get a signed upload signature from our backend
       const folder = field === 'avatar' ? 'applications/avatars' : 'applications/documents';
-      const sigResponse = await fetch(`/api/upload/signature?folder=${folder}`);
+      const sigResponse = await fetch(`/api/upload/signature?folder=${folder}&timestamp=${Math.round(Date.now()/1000)}`);
       const sigData = await sigResponse.json();
 
       if (!sigData.success) {
