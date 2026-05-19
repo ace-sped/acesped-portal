@@ -310,7 +310,7 @@ export default function NewsPage() {
               {filteredNews.map((item) => (
                 <div
                   key={item.id}
-                  onClick={() => setSelectedNews(item)}
+                  onClick={() => item.slug && router.push(`/news/${item.slug}`)}
                   className="group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer"
                 >
                   <div className="relative aspect-video bg-linear-to-br from-green-500 to-emerald-600">
