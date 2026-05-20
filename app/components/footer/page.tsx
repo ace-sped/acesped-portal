@@ -115,10 +115,10 @@ export default function Footer() {
             </ul>
             <div className="mt-6">
               <a
-                href="https://acespedunn.edu.ng:2096/cpsess4046901288/webmail/jupiter/index.html?mailclient=none"
+                href="https://cs2002.webhostbox.net:2096/logout/?locale=en"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 hover:shadow-lg hover:scale-105 transition-all duration-200 text-sm"
+                className="inline-flex items-center px-4 py-2 bg-red-800 text-white rounded-lg font-medium hover:bg-gray-700 hover:shadow-lg hover:scale-105 transition-all duration-200 text-sm"
               >
                 <Mail className="h-4 w-4 mr-2" />
                 Web Mail
