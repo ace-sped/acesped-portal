@@ -333,8 +333,7 @@ export default function Home() {
                 sizes="100vw"
                 priority={index === 0}
                 quality={90}
-                className="object-cover object-[center_35%] sm:object-center scale-105 transition-transform duration-[8000ms] ease-out"
-                style={index === currentSlide ? { transform: 'scale(1)' } : {}}
+                className="object-contain object-center"
               />
               {/* Multi-layer gradient for depth */}
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-gray-950/30 to-transparent" />

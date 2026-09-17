@@ -736,13 +736,13 @@ export default function UserManagement() {
         {/* Create User Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-[50%] mx-4">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-[50%] mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700 shrink-0">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                   Create New User
                 </h2>
               </div>
-              <form onSubmit={handleCreateUser} className="p-6">
+              <form onSubmit={handleCreateUser} className="p-6 overflow-y-auto">
                 <div className="space-y-4">
                   {/* Avatar Upload */}
                   <div>
@@ -961,13 +961,13 @@ export default function UserManagement() {
         {
           showEditModal && selectedUser && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-[50%] mx-4">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-[50%] mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700 shrink-0">
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                     Edit User
                   </h2>
                 </div>
-                <form onSubmit={handleUpdateUser} className="p-6">
+                <form onSubmit={handleUpdateUser} className="p-6 overflow-y-auto">
                   <div className="space-y-4">
                     {/* Avatar Upload */}
                     <div>
