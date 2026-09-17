@@ -634,7 +634,6 @@ export default function ApplicationPage() {
   ];
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
-  const programStepIndex = steps.findIndex(step => step.id === 'program');
 
   const isNonEmpty = (value: string | undefined | null) =>
     typeof value === 'string' && value.trim() !== '';
@@ -749,8 +748,8 @@ export default function ApplicationPage() {
   };
 
   const duplicateWarningText = duplicateApplication.exists
-    ? `An application for ${formData.email || 'this email'} in ${formData.admissionSession || 'this session'} already exists${duplicateApplication.applicationNumber ? ` (Ref: ${duplicateApplication.applicationNumber})` : ''
-    }. Please update the email address or choose another session before continuing.`
+    ? `An application for ${formData.email || 'this email'} already exists${duplicateApplication.applicationNumber ? ` (Ref: ${duplicateApplication.applicationNumber})` : ''
+    }. Please use a different email address before continuing.`
     : '';
 
   const isNextDisabled =
@@ -758,10 +757,7 @@ export default function ApplicationPage() {
 
   const goToStep = (stepId: ApplicationStep) => {
     const targetIndex = steps.findIndex(step => step.id === stepId);
-    if (
-      duplicateApplication.exists &&
-      targetIndex > programStepIndex
-    ) {
+    if (duplicateApplication.exists && targetIndex > currentStepIndex) {
       openAlertModal('Existing Application', duplicateWarningText, 'warning');
       return;
     }
@@ -915,7 +911,7 @@ export default function ApplicationPage() {
       const errorMessage =
         errorData?.message ||
         (response.status === 409
-          ? 'You have already submitted an application for this session.'
+          ? 'An application with this email address already exists.'
           : 'Failed to submit application.');
 
       openAlertModal('Unable to Submit', errorMessage, 'error');
@@ -995,14 +991,14 @@ export default function ApplicationPage() {
     setSelectedProgram(matched || null);
   }, [programs, formData.programChoice]);
 
-  // Check if this email already has an application in the selected admission session
+  // Check if this email already has an application
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const email = formData.email?.trim() || '';
-    const session = formData.admissionSession?.trim() || '';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!email || !session) {
+    if (!email || !emailRegex.test(email)) {
       setDuplicateApplication({ exists: false, applicationNumber: null });
       setDuplicateCheckError(null);
       setDuplicateCheckLoading(false);
@@ -1015,10 +1011,7 @@ export default function ApplicationPage() {
 
     const handler = setTimeout(async () => {
       try {
-        const params = new URLSearchParams({
-          email,
-          admissionSession: session,
-        });
+        const params = new URLSearchParams({ email });
         const response = await fetch(`/api/applications/check?${params.toString()}`, {
           signal: controller.signal,
         });
@@ -1057,7 +1050,7 @@ export default function ApplicationPage() {
       clearTimeout(handler);
       controller.abort();
     };
-  }, [formData.email, formData.admissionSession]);
+  }, [formData.email]);
 
   // Helper to get the numeric application fee in Naira for Paystack
   // Primary source: `fee` field from the selected program in the database.
@@ -1297,6 +1290,21 @@ export default function ApplicationPage() {
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white"
                   placeholder="john.doe@example.com"
                 />
+                {duplicateCheckLoading && (
+                  <p className="mt-2 text-xs text-blue-600 dark:text-blue-300">Checking existing applications...</p>
+                )}
+                {duplicateApplication.exists && (
+                  <div className="mt-2 text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                    An application for <strong>{formData.email}</strong> already exists
+                    {duplicateApplication.applicationNumber ? ` (Ref: ${duplicateApplication.applicationNumber})` : ''}.
+                    Please use a different email address before continuing.
+                  </div>
+                )}
+                {!duplicateApplication.exists && duplicateCheckError && (
+                  <p className="mt-2 text-xs text-yellow-600 dark:text-yellow-300">
+                    {duplicateCheckError}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1672,22 +1680,6 @@ export default function ApplicationPage() {
                 >
                   <option value="2026/2027">2026/2027</option>
                 </select>
-                {duplicateCheckLoading && (
-                  <p className="mt-2 text-xs text-blue-600 dark:text-blue-300">Checking existing applications...</p>
-                )}
-                {duplicateApplication.exists && (
-                  <div className="mt-2 text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                    An application for <strong>{formData.email || 'this email'}</strong> in{' '}
-                    <strong>{formData.admissionSession || 'this session'}</strong> already exists
-                    {duplicateApplication.applicationNumber ? ` (Ref: ${duplicateApplication.applicationNumber})` : ''}.
-                    Please use a different email address or choose another session before continuing.
-                  </div>
-                )}
-                {!duplicateApplication.exists && duplicateCheckError && (
-                  <p className="mt-2 text-xs text-yellow-600 dark:text-yellow-300">
-                    {duplicateCheckError}
-                  </p>
-                )}
               </div>
             </div>
 
@@ -2525,7 +2517,7 @@ export default function ApplicationPage() {
                 const isActive = step.id === currentStep;
                 const isCompleted = index < currentStepIndex;
                 const stepDisabled =
-                  (duplicateApplication.exists && index > programStepIndex) ||
+                  (duplicateApplication.exists && index > currentStepIndex) ||
                   (index > currentStepIndex &&
                     steps.slice(0, index).some((s) => !isStepComplete(s.id)));
 

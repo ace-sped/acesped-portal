@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const { email, admissionSession, ...rest } = data ?? {};
-    const normalizedEmail = typeof email === 'string' ? email.trim() : '';
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     const normalizedSession = typeof admissionSession === 'string' ? admissionSession.trim() : '';
 
     if (!normalizedEmail || !normalizedSession) {
@@ -19,11 +19,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prevent duplicates: an email can only apply once per admission session
+    // Prevent duplicates: an email can only apply once
     const existingApplication = await prisma.application.findFirst({
       where: {
-        email: normalizedEmail,
-        admissionSession: normalizedSession,
+        email: {
+          equals: normalizedEmail,
+          mode: 'insensitive',
+        },
       },
     });
 
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           message:
-            'You have already submitted an application for this admission session. Please contact support if you need to make changes.',
+            'An application with this email address already exists. Please contact support if you need to make changes.',
           applicationNumber: existingApplication.applicationNumber,
         },
         { status: 409 }
