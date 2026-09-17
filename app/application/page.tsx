@@ -901,7 +901,7 @@ export default function ApplicationPage() {
       case 'requirements':
         return (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center">2025-2026  ACESPED APPLICATION FORM FOR POSTGRADUATE PROGRAMMES</h2>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center">2026-2027 ACESPED APPLICATION FORM FOR POSTGRADUATE PROGRAMMES</h2>
             <p>Welcome to the application page of the Africa Centre of Excellence for Sustainable Energy and Power Development (ACESPED).</p>
             <p>You would be expected to submit the following types of  information during the course of your application:</p>
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
@@ -975,7 +975,7 @@ export default function ApplicationPage() {
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-100 mb-4">The Application Deadline is December 2025</h3>
+              <h3 className="text-xl font-semibold text-blue-900 dark:text-blue-100 mb-4">The Application Deadline is December 2026</h3>
               <h2>Prof. Cosmas Anyanwu</h2>
               <p>Chairman, Admission Committee,</p>
               <p>Africa Centre of Excellence for Sustainable Energy and Power Development (ACESPED),</p>
