@@ -368,6 +368,17 @@ const locationData: Record<string, Record<string, string[]>> = {
 };
 
 const PAYMENT_STORAGE_KEY = 'acePaymentRecord';
+const APPLICATION_DRAFT_KEY = 'aceApplicationDraft';
+const APPLICATION_DATA_KEY = 'aceApplicationData';
+const APPLICATION_STEP_KEY = 'aceApplicationStep';
+
+type ApplicationDraft = {
+  formData: ApplicationData;
+  currentStep: ApplicationStep;
+  acceptedRequirements: boolean;
+  paymentCompleted: boolean;
+  avatarPreview: string;
+};
 
 export default function ApplicationPage() {
   const router = useRouter();
@@ -426,7 +437,7 @@ export default function ApplicationPage() {
     kinAddress: '',
     programType: '',
     programChoice: '',
-    admissionSession: '',
+    admissionSession: '2026/2027',
     modeOfStudy: '',
     previousDegree: '',
     previousInstitution: '',
@@ -474,6 +485,47 @@ export default function ApplicationPage() {
     );
   };
 
+  const syncLocationOptions = (data: ApplicationData) => {
+    if (data.country && locationData[data.country]) {
+      setAvailableStates(Object.keys(locationData[data.country]));
+      if (data.state && locationData[data.country][data.state]) {
+        setAvailableCities(locationData[data.country][data.state]);
+      } else {
+        setAvailableCities([]);
+      }
+    } else {
+      setAvailableStates([]);
+      setAvailableCities([]);
+    }
+  };
+
+  const persistApplicationDraft = (overrides?: Partial<ApplicationDraft>) => {
+    if (typeof window === 'undefined') return;
+
+    const draft: ApplicationDraft = {
+      formData: overrides?.formData ?? formData,
+      currentStep: overrides?.currentStep ?? currentStep,
+      acceptedRequirements: overrides?.acceptedRequirements ?? acceptedRequirements,
+      paymentCompleted: overrides?.paymentCompleted ?? paymentCompleted,
+      avatarPreview: overrides?.avatarPreview ?? avatarPreview,
+    };
+
+    try {
+      safeSessionStorageSet(APPLICATION_DRAFT_KEY, JSON.stringify(draft));
+      // Keep legacy keys for Paystack return compatibility
+      safeSessionStorageSet(APPLICATION_DATA_KEY, JSON.stringify(draft.formData));
+      safeSessionStorageSet(APPLICATION_STEP_KEY, draft.currentStep);
+    } catch (storageError) {
+      console.error('Error saving application draft:', storageError);
+    }
+  };
+
+  const clearApplicationDraft = () => {
+    safeSessionStorageRemove(APPLICATION_DRAFT_KEY);
+    safeSessionStorageRemove(APPLICATION_DATA_KEY);
+    safeSessionStorageRemove(APPLICATION_STEP_KEY);
+  };
+
   // Paystack payment handler - mirrors SkillApplication dynamic initialize flow
   const handlePaystackPayment = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     // Prevent any default behavior
@@ -513,8 +565,7 @@ export default function ApplicationPage() {
       // Store form data in sessionStorage before redirecting
       if (typeof window !== 'undefined') {
         try {
-          safeSessionStorageSet('aceApplicationData', JSON.stringify(formData));
-          safeSessionStorageSet('aceApplicationStep', currentStep);
+          persistApplicationDraft({ currentStep: 'payment' });
         } catch (storageError) {
           console.error('Error saving to sessionStorage:', storageError);
         }
@@ -585,6 +636,110 @@ export default function ApplicationPage() {
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
   const programStepIndex = steps.findIndex(step => step.id === 'program');
 
+  const isNonEmpty = (value: string | undefined | null) =>
+    typeof value === 'string' && value.trim() !== '';
+
+  const isValidEmail = (value: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
+  const getMissingRequiredFields = (step: ApplicationStep): string[] => {
+    const missing: string[] = [];
+
+    switch (step) {
+      case 'requirements':
+        if (!acceptedRequirements) missing.push('Acceptance of requirements');
+        break;
+
+      case 'personal':
+        if (!isNonEmpty(formData.avatar)) missing.push('Passport Photograph');
+        if (!isNonEmpty(formData.surname)) missing.push('Surname');
+        if (!isNonEmpty(formData.firstname)) missing.push('First Name');
+        if (!isNonEmpty(formData.email)) missing.push('Email Address');
+        else if (!isValidEmail(formData.email)) missing.push('Valid Email Address');
+        if (!isNonEmpty(formData.phoneNumber)) missing.push('Phone Number');
+        if (!isNonEmpty(formData.dateOfBirth)) missing.push('Date of Birth');
+        if (!isNonEmpty(formData.gender)) missing.push('Gender');
+        if (!isNonEmpty(formData.maritalStatus)) missing.push('Marital Status');
+        if (!isNonEmpty(formData.nationality)) missing.push('Country of Residence');
+        if (!isNonEmpty(formData.address)) missing.push('Residential Address');
+        if (!isNonEmpty(formData.country)) missing.push('Nationality');
+        if (!isNonEmpty(formData.state)) missing.push('State of Origin');
+        if (!isNonEmpty(formData.city)) missing.push('Local Government Area or Municipality');
+        if (!isNonEmpty(formData.homeTown)) missing.push('Home Town');
+        if (!isNonEmpty(formData.nationalId)) missing.push('National ID No');
+        if (!isNonEmpty(formData.nationalIdFile)) missing.push('NIN/Passport Document');
+        if (!isNonEmpty(formData.religion)) missing.push('Religion');
+        break;
+
+      case 'nextOfKin':
+        if (!isNonEmpty(formData.kinFirstname)) missing.push('Next of Kin First Name');
+        if (!isNonEmpty(formData.kinSurname)) missing.push('Next of Kin Surname');
+        if (!isNonEmpty(formData.kinRelationship)) missing.push('Relationship');
+        if (!isNonEmpty(formData.kinPhone)) missing.push('Next of Kin Phone Number');
+        if (!isNonEmpty(formData.kinEmail)) missing.push('Next of Kin Email');
+        else if (!isValidEmail(formData.kinEmail)) missing.push('Valid Next of Kin Email');
+        if (!isNonEmpty(formData.kinAddress)) missing.push('Next of Kin Address');
+        break;
+
+      case 'program':
+        if (!isNonEmpty(formData.programType)) missing.push('Program Type');
+        if (!isNonEmpty(formData.admissionSession)) missing.push('Admission Session');
+        if (!isNonEmpty(formData.programChoice)) missing.push('Program Choice');
+        if (!isNonEmpty(formData.modeOfStudy)) missing.push('Mode of Study');
+        break;
+
+      case 'education':
+        if (!isNonEmpty(formData.previousDegree)) missing.push('Previous Degree');
+        if (!isNonEmpty(formData.previousFieldOfStudy)) missing.push('Field of Study');
+        if (!isNonEmpty(formData.previousInstitution)) missing.push('Institution');
+        if (!isNonEmpty(formData.previousGraduationYear)) missing.push('Year of Graduation');
+        if (!isNonEmpty(formData.previousGPA)) missing.push('GPA/CGPA');
+        break;
+
+      case 'employment':
+        if (!isNonEmpty(formData.employmentStatus)) missing.push('Employment Status');
+        if (formData.employmentStatus === 'Employed') {
+          if (!isNonEmpty(formData.currentEmployer)) missing.push('Current Employer');
+          if (!isNonEmpty(formData.jobTitle)) missing.push('Job Title');
+          if (!isNonEmpty(formData.employmentStartDate)) missing.push('Employment Start Date');
+        }
+        if (!isNonEmpty(formData.reasonForPursuing)) missing.push('Reason for Pursuing This Program');
+        break;
+
+      case 'research':
+        if (!isNonEmpty(formData.researchTitle)) missing.push('Research Title');
+        if (!isNonEmpty(formData.researchAbstract)) missing.push('Abstract');
+        if (!isNonEmpty(formData.researchObjectives)) missing.push('Research Objectives');
+        if (!isNonEmpty(formData.researchMethodology)) missing.push('Methodology');
+        if (!isNonEmpty(formData.proposalFile)) missing.push('Research Proposal Document');
+        break;
+
+      case 'recommendations':
+        if (!isNonEmpty(formData.referee1Name)) missing.push('First Referee Full Name');
+        if (!isNonEmpty(formData.referee1Email)) missing.push('First Referee Email');
+        else if (!isValidEmail(formData.referee1Email)) missing.push('Valid First Referee Email');
+        if (!isNonEmpty(formData.referee1Phone)) missing.push('First Referee Phone');
+        if (!isNonEmpty(formData.referee1Institution)) missing.push('First Referee Institution');
+        if (!isNonEmpty(formData.referee2Name)) missing.push('Second Referee Full Name');
+        if (!isNonEmpty(formData.referee2Email)) missing.push('Second Referee Email');
+        else if (!isValidEmail(formData.referee2Email)) missing.push('Valid Second Referee Email');
+        if (!isNonEmpty(formData.referee2Phone)) missing.push('Second Referee Phone');
+        if (!isNonEmpty(formData.referee2Institution)) missing.push('Second Referee Institution');
+        break;
+
+      case 'payment':
+        if (!paymentCompleted) missing.push('Completed Payment');
+        break;
+    }
+
+    return missing;
+  };
+
+  const isStepComplete = (step: ApplicationStep) =>
+    getMissingRequiredFields(step).length === 0;
+
+  const currentStepMissingFields = getMissingRequiredFields(currentStep);
+
   const openAlertModal = (
     title: string,
     message: string,
@@ -599,7 +754,7 @@ export default function ApplicationPage() {
     : '';
 
   const isNextDisabled =
-    (currentStep === 'requirements' && !acceptedRequirements) || duplicateApplication.exists;
+    duplicateApplication.exists || currentStepMissingFields.length > 0;
 
   const goToStep = (stepId: ApplicationStep) => {
     const targetIndex = steps.findIndex(step => step.id === stepId);
@@ -611,16 +766,27 @@ export default function ApplicationPage() {
       return;
     }
 
-    // On the requirements step, user must accept before navigating away
-    if (currentStep === 'requirements' && stepId !== 'requirements' && !acceptedRequirements) {
-      openAlertModal(
-        'Accept Requirements',
-        'Please read and accept the requirements before proceeding.',
-        'warning'
-      );
-      return;
+    // Going forward: all previous stages must be complete
+    if (targetIndex > currentStepIndex) {
+      for (let i = 0; i < targetIndex; i++) {
+        const step = steps[i];
+        const missing = getMissingRequiredFields(step.id);
+        if (missing.length > 0) {
+          openAlertModal(
+            'Incomplete Stage',
+            `Please complete all required fields in "${step.title}" before continuing:\n• ${missing.join('\n• ')}`,
+            'warning'
+          );
+          setCurrentStep(step.id);
+          if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+          return;
+        }
+      }
     }
 
+    persistApplicationDraft({ currentStep: stepId });
     setCurrentStep(stepId);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -694,8 +860,20 @@ export default function ApplicationPage() {
       return;
     }
 
+    const missing = getMissingRequiredFields(currentStep);
+    if (missing.length > 0) {
+      openAlertModal(
+        'Incomplete Stage',
+        `Please complete all required fields before continuing:\n• ${missing.join('\n• ')}`,
+        'warning'
+      );
+      return;
+    }
+
     if (currentStepIndex < steps.length - 1) {
-      setCurrentStep(steps[currentStepIndex + 1].id);
+      const nextStep = steps[currentStepIndex + 1].id;
+      persistApplicationDraft({ currentStep: nextStep });
+      setCurrentStep(nextStep);
       if (typeof window !== 'undefined') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -704,7 +882,9 @@ export default function ApplicationPage() {
 
   const handlePrevious = () => {
     if (currentStepIndex > 0) {
-      setCurrentStep(steps[currentStepIndex - 1].id);
+      const previousStep = steps[currentStepIndex - 1].id;
+      persistApplicationDraft({ currentStep: previousStep });
+      setCurrentStep(previousStep);
       if (typeof window !== 'undefined') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -721,6 +901,12 @@ export default function ApplicationPage() {
       });
 
       if (response.ok) {
+        clearApplicationDraft();
+        try {
+          localStorage.removeItem(PAYMENT_STORAGE_KEY);
+        } catch {
+          // ignore
+        }
         setShowSuccessModal(true);
         return;
       }
@@ -875,7 +1061,7 @@ export default function ApplicationPage() {
 
   // Helper to get the numeric application fee in Naira for Paystack
   // Primary source: `fee` field from the selected program in the database.
-  // Fallback: flat ₦25,000 if no valid fee is set.
+  // Fallback: flat ₦26,700 if no valid fee is set.
   const getApplicationPriceInNaira = (): number => {
     const fee = selectedProgram?.fee;
 
@@ -887,7 +1073,7 @@ export default function ApplicationPage() {
     }
 
     // Default application fee if no valid fee is set on the program
-    return 25000;
+    return 26700;
   };
 
   // Display string for the application fee (reactive to selectedProgram changes)
@@ -1484,8 +1670,6 @@ export default function ApplicationPage() {
                   onChange={(e) => setFormData({ ...formData, admissionSession: e.target.value })}
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white"
                 >
-                  <option value="">Select Session</option>
-                  <option value="2025/2026">2025/2026</option>
                   <option value="2026/2027">2026/2027</option>
                 </select>
                 {duplicateCheckLoading && (
@@ -1703,7 +1887,21 @@ export default function ApplicationPage() {
               <select
                 required
                 value={formData.employmentStatus}
-                onChange={(e) => setFormData({ ...formData, employmentStatus: e.target.value })}
+                onChange={(e) => {
+                  const status = e.target.value;
+                  setFormData({
+                    ...formData,
+                    employmentStatus: status,
+                    ...(status !== 'Employed'
+                      ? {
+                          currentEmployer: '',
+                          jobTitle: '',
+                          employmentStartDate: '',
+                          employmentEndDate: '',
+                        }
+                      : {}),
+                  });
+                }}
                 className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white"
               >
                 <option value="">Select Status</option>
@@ -1714,7 +1912,7 @@ export default function ApplicationPage() {
               </select>
             </div>
 
-            {formData.employmentStatus && formData.employmentStatus !== 'Unemployed' && (
+            {formData.employmentStatus === 'Employed' && (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -2113,67 +2311,79 @@ export default function ApplicationPage() {
     }
   };
 
-  // Check for payment callback on mount
+  // Restore draft on mount, and handle Paystack payment return
   useEffect(() => {
-    // Check if returning from Paystack payment
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const reference = urlParams.get('reference');
-      const trxref = urlParams.get('trxref');
-      const paymentCallback = urlParams.get('payment_callback');
-      const paymentRef = reference || trxref;
+    if (typeof window === 'undefined') return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const reference = urlParams.get('reference');
+    const trxref = urlParams.get('trxref');
+    const paymentRef = reference || trxref;
+
+    const draftRaw = safeSessionStorageGet(APPLICATION_DRAFT_KEY);
+    const legacyDataRaw = safeSessionStorageGet(APPLICATION_DATA_KEY);
+    const legacyStep = safeSessionStorageGet(APPLICATION_STEP_KEY);
+
+    let restoredForm: ApplicationData | null = null;
+    let restoredStep: ApplicationStep | null = null;
+    let restoredAccepted = false;
+    let restoredPaymentCompleted = false;
+    let restoredAvatar = '';
+
+    if (draftRaw) {
+      try {
+        const draft = JSON.parse(draftRaw) as ApplicationDraft;
+        restoredForm = draft.formData || null;
+        restoredStep = draft.currentStep || null;
+        restoredAccepted = Boolean(draft.acceptedRequirements);
+        restoredPaymentCompleted = Boolean(draft.paymentCompleted);
+        restoredAvatar = draft.avatarPreview || draft.formData?.avatar || '';
+      } catch (error) {
+        console.error('Error parsing application draft:', error);
+      }
+    } else if (legacyDataRaw) {
+      try {
+        restoredForm = JSON.parse(legacyDataRaw) as ApplicationData;
+        restoredStep = (legacyStep as ApplicationStep) || null;
+        restoredAvatar = restoredForm.avatar || '';
+      } catch (error) {
+        console.error('Error parsing legacy application data:', error);
+      }
+    }
+
+    if (restoredForm) {
+      const nextForm = paymentRef
+        ? {
+            ...restoredForm,
+            paymentReference: paymentRef,
+            paymentMethod: 'Paystack',
+          }
+        : restoredForm;
+
+      setFormData((prev) => ({ ...prev, ...nextForm }));
+      syncLocationOptions(nextForm);
+      if (restoredAvatar || nextForm.avatar) {
+        setAvatarPreview(restoredAvatar || nextForm.avatar);
+      }
+      setAcceptedRequirements(restoredAccepted);
+      setPaymentCompleted(paymentRef ? true : restoredPaymentCompleted);
+      setCurrentStep(paymentRef ? 'payment' : restoredStep || 'requirements');
+
+      persistApplicationDraft({
+        formData: nextForm,
+        currentStep: paymentRef ? 'payment' : restoredStep || 'requirements',
+        acceptedRequirements: restoredAccepted,
+        paymentCompleted: paymentRef ? true : restoredPaymentCompleted,
+        avatarPreview: restoredAvatar || nextForm.avatar || '',
+      });
 
       if (paymentRef) {
-        // Restore form data from sessionStorage if available
-        const savedData = safeSessionStorageGet('aceApplicationData');
-        const savedStep = safeSessionStorageGet('aceApplicationStep');
-        let restoredApplicantEmail = '';
-
-        if (savedData) {
-          try {
-            const parsedData = JSON.parse(savedData);
-            restoredApplicantEmail = parsedData?.email || '';
-            setFormData({
-              ...parsedData,
-              paymentReference: paymentRef,
-              paymentMethod: 'Paystack'
-            });
-
-            // Navigate to payment step
-            if (savedStep) {
-              setCurrentStep(savedStep as ApplicationStep);
-            } else {
-              setCurrentStep('payment');
-            }
-
-            // Clear sessionStorage
-            safeSessionStorageRemove('aceApplicationData');
-            safeSessionStorageRemove('aceApplicationStep');
-          } catch (error) {
-            console.error('Error restoring form data:', error);
-          }
-        } else {
-          // Even if no saved data, update payment reference
-          setFormData(prev => ({
-            ...prev,
-            paymentReference: paymentRef,
-            paymentMethod: 'Paystack'
-          }));
-          // Navigate to payment step to show success
-          setCurrentStep('payment');
-        }
-
-        // Always set payment completed if reference exists
-        setPaymentCompleted(true);
-
-        // Save payment reference to localStorage for persistence
-        const paymentEmail = restoredApplicantEmail || formData.email || '';
         try {
           localStorage.setItem(
             PAYMENT_STORAGE_KEY,
             JSON.stringify({
               reference: paymentRef,
-              email: paymentEmail,
+              email: nextForm.email || '',
               timestamp: new Date().toISOString(),
             })
           );
@@ -2181,17 +2391,29 @@ export default function ApplicationPage() {
           console.error('Error storing payment record:', storageError);
         }
 
-        // Clean URL
         window.history.replaceState({}, '', window.location.pathname);
-
-        // Show success message
         openAlertModal(
           'Payment Successful',
           'Payment successful! You can now submit your application.',
           'success'
         );
       }
+    } else if (paymentRef) {
+      setFormData((prev) => ({
+        ...prev,
+        paymentReference: paymentRef,
+        paymentMethod: 'Paystack',
+      }));
+      setCurrentStep('payment');
+      setPaymentCompleted(true);
+      window.history.replaceState({}, '', window.location.pathname);
+      openAlertModal(
+        'Payment Successful',
+        'Payment successful! You can now submit your application.',
+        'success'
+      );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Toggle payment completion based on reference value
@@ -2302,7 +2524,10 @@ export default function ApplicationPage() {
                 const Icon = step.icon;
                 const isActive = step.id === currentStep;
                 const isCompleted = index < currentStepIndex;
-                const stepDisabled = duplicateApplication.exists && index > programStepIndex;
+                const stepDisabled =
+                  (duplicateApplication.exists && index > programStepIndex) ||
+                  (index > currentStepIndex &&
+                    steps.slice(0, index).some((s) => !isStepComplete(s.id)));
 
                 return (
                   <div key={step.id} className="flex items-center flex-1">
@@ -2396,9 +2621,9 @@ export default function ApplicationPage() {
                     {duplicateWarningText}
                   </p>
                 )}
-                {!duplicateApplication.exists && currentStep === 'requirements' && !acceptedRequirements && (
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-right">
-                    Please read and accept the requirements before proceeding.
+                {!duplicateApplication.exists && currentStepMissingFields.length > 0 && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-right max-w-md">
+                    Please complete all required fields in this stage before continuing.
                   </p>
                 )}
               </div>
@@ -2467,7 +2692,7 @@ export default function ApplicationPage() {
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                 {alertModal.title}
               </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+              <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed whitespace-pre-line text-left">
                 {alertModal.message}
               </p>
               <button

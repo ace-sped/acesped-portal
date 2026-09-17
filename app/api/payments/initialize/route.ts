@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Amount in kobo (25000 Naira = 2500000 kobo)
-    const amountInKobo = amount || 2500000;
+    // Amount in kobo (26700 Naira = 2670000 kobo)
+    const amountInKobo = amount || 2670000;
 
     // Get Paystack secret key from environment variables
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
