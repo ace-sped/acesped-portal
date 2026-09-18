@@ -315,158 +315,166 @@ export default function Home() {
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       {(heroLoading || heroSlides.length > 0) && (
-      <section className="relative isolate min-h-[calc(100svh-5rem)] sm:min-h-[calc(100svh-5.5rem)] overflow-hidden bg-gray-950">
+      <section className="relative isolate overflow-hidden bg-gray-950 md:min-h-[calc(100svh-5.5rem)]">
+        <div className="flex flex-col md:block md:min-h-[calc(100svh-5.5rem)]">
 
-        {/* ── Background slides ── */}
-        <div className="absolute inset-0 z-0">
-          {heroSlides.map((slide, index) => (
-            <div
-              key={index}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                index === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
-              }`}
-            >
-              <Image
-                src={slide.image}
-                alt={slide.title}
-                fill
-                sizes="100vw"
-                priority={index === 0}
-                quality={90}
-                className="object-contain object-center"
-              />
-              {/* Multi-layer gradient for depth */}
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-gray-950/30 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-r from-gray-950/25 via-transparent to-transparent" />
-            </div>
-          ))}
-        </div>
-
-        {/* ── Decorative orbs ── */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-emerald-400/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-green-400/20 rounded-full blur-3xl animate-pulse [animation-delay:2s]" />
-        </div>
-
-        {/* ── Main content ── */}
-        <div className="relative z-10 flex min-h-[calc(100svh-5rem)] sm:min-h-[calc(100svh-5.5rem)] flex-col">
-
-          {/* Centered slide copy */}
-          {/* Bottom-aligned content — sits above the stats bar without blocking the image */}
-          <div className="flex-1 flex items-end justify-center px-4 sm:px-6 pt-16 pb-4">
-            <div className="w-full max-w-2xl text-center">
-              {heroLoading ? (
-                <div className="space-y-3 animate-pulse pb-2">
-                  <div className="h-3 w-36 bg-white/20 rounded-full mx-auto" />
-                  <div className="h-7 w-3/4 bg-white/20 rounded-lg mx-auto" />
-                  <div className="h-3 w-2/3 bg-white/10 rounded mx-auto" />
-                  <div className="flex gap-2 justify-center pt-1">
-                    <div className="h-8 w-24 bg-white/20 rounded-lg" />
-                    <div className="h-8 w-24 bg-white/10 rounded-lg" />
-                  </div>
-                </div>
-              ) : (
+          {/* ── Slides: top on mobile (height follows image), full-bleed on desktop ── */}
+          <div className="relative z-0 w-full shrink-0 md:absolute md:inset-0 md:min-h-[calc(100svh-5.5rem)]">
+            {heroSlides.map((slide, index) => {
+              const isActive = index === currentSlide;
+              return (
                 <div
-                  key={currentSlide}
-                  className="animate-in fade-in slide-in-from-bottom-3 duration-700"
+                  key={index}
+                  className={`w-full transition-opacity duration-1000 ease-in-out ${
+                    isActive
+                      ? 'relative opacity-100 md:absolute md:inset-0'
+                      : 'pointer-events-none absolute inset-0 opacity-0'
+                  }`}
                 >
-                  {/* Subtitle badge */}
-                  {heroSlides[currentSlide]?.subtitle && (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 backdrop-blur-sm mb-2.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                      <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-emerald-300">
-                        {heroSlides[currentSlide].subtitle}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Title */}
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold leading-snug text-white text-balance drop-shadow-md">
-                    {heroSlides[currentSlide]?.title}
-                  </h1>
-
-                  {/* Description */}
-                  <p className="mt-2 max-w-xl mx-auto text-gray-200/85 text-xs sm:text-sm leading-relaxed text-pretty line-clamp-2">
-                    {heroSlides[currentSlide]?.description}
-                  </p>
-
-                  {/* CTA buttons */}
-                  <div className="mt-4 flex flex-row flex-wrap justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => router.push(heroSlides[currentSlide]?.ctaPrimaryHref || '/services')}
-                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg font-semibold text-xs sm:text-sm shadow-lg shadow-emerald-900/40 hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 group"
-                    >
-                      {heroSlides[currentSlide]?.ctaPrimaryText || 'Explore Programs'}
-                      <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform shrink-0" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => router.push(heroSlides[currentSlide]?.ctaSecondaryHref || '/about')}
-                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/30 hover:border-white/50 text-white rounded-lg font-semibold text-xs sm:text-sm backdrop-blur-sm transition-all duration-200"
-                    >
-                      {heroSlides[currentSlide]?.ctaSecondaryText || 'Learn More'}
-                    </button>
-                  </div>
+                  {/* Mobile: natural height so content sits flush under the image */}
+                  <Image
+                    src={slide.image}
+                    alt={slide.title}
+                    width={1920}
+                    height={1080}
+                    sizes="100vw"
+                    priority={index === 0}
+                    quality={90}
+                    className="h-auto w-full object-contain object-top md:hidden"
+                  />
+                  {/* Desktop: fill hero */}
+                  <Image
+                    src={slide.image}
+                    alt=""
+                    fill
+                    sizes="100vw"
+                    priority={index === 0}
+                    quality={90}
+                    aria-hidden
+                    className="hidden object-cover object-center md:block"
+                  />
+                  <div className="absolute inset-0 hidden bg-gradient-to-t from-gray-950/80 via-gray-950/35 to-gray-950/20 md:block" />
+                  <div className="absolute inset-0 hidden bg-gradient-to-r from-gray-950/25 via-transparent to-transparent md:block" />
                 </div>
-              )}
+              );
+            })}
+
+            <div className="pointer-events-none absolute inset-0 z-0 hidden overflow-hidden md:block">
+              <div className="absolute top-1/4 right-1/4 h-96 w-96 rounded-full bg-emerald-400/20 blur-3xl animate-pulse" />
+              <div className="absolute bottom-1/3 left-1/4 h-80 w-80 rounded-full bg-green-400/20 blur-3xl animate-pulse [animation-delay:2s]" />
             </div>
           </div>
 
-          {/* ── Bottom bar: stats + slide controls ── */}
-          <div className="relative z-10 border-t border-white/10 bg-black/30 backdrop-blur-md">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
-
-              {/* Stats strip */}
-              <div className="hidden sm:flex items-center gap-6 lg:gap-8 text-white">
-                {stats.map((stat, i) => {
-                  const Icon = stat.icon;
-                  return (
-                    <div key={i} className="flex items-center gap-2">
-                      <Icon className="h-4 w-4 text-emerald-400 shrink-0" />
-                      <div>
-                        <p className="text-xs font-bold text-white leading-none">{stat.value}</p>
-                        <p className="text-[10px] text-gray-400 leading-none mt-0.5">{stat.label}</p>
-                      </div>
+          {/* ── Main content: under slides on mobile, centered overlay on desktop ── */}
+          <div className="relative z-10 flex flex-1 flex-col md:min-h-[calc(100svh-5.5rem)]">
+            <div className="flex flex-1 items-start justify-center px-4 pb-5 pt-3 sm:px-6 sm:pb-6 sm:pt-4 md:items-center md:py-10">
+              <div className="w-full max-w-2xl text-center">
+                {heroLoading ? (
+                  <div className="space-y-3 animate-pulse pb-2">
+                    <div className="mx-auto h-3 w-36 rounded-full bg-white/20" />
+                    <div className="mx-auto h-7 w-3/4 rounded-lg bg-white/20" />
+                    <div className="mx-auto h-3 w-2/3 rounded bg-white/10" />
+                    <div className="flex justify-center gap-2 pt-1">
+                      <div className="h-8 w-24 rounded-lg bg-white/20" />
+                      <div className="h-8 w-24 rounded-lg bg-white/10" />
                     </div>
-                  );
-                })}
+                  </div>
+                ) : (
+                  <div
+                    key={currentSlide}
+                    className="animate-in fade-in zoom-in-95 duration-700"
+                  >
+                    {heroSlides[currentSlide]?.subtitle && (
+                      <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/20 px-2.5 py-1 backdrop-blur-sm">
+                        <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-400" />
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300 sm:text-xs">
+                          {heroSlides[currentSlide].subtitle}
+                        </span>
+                      </div>
+                    )}
+
+                    <h1 className="text-balance text-lg font-bold leading-snug text-white drop-shadow-md sm:text-xl md:text-2xl">
+                      {heroSlides[currentSlide]?.title}
+                    </h1>
+
+                    <p className="mx-auto mt-2 max-w-xl text-pretty text-xs leading-relaxed text-gray-200/85 line-clamp-2 sm:text-sm">
+                      {heroSlides[currentSlide]?.description}
+                    </p>
+
+                    <div className="mt-4 flex flex-row flex-wrap justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => router.push(heroSlides[currentSlide]?.ctaPrimaryHref || '/services')}
+                        className="group inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-emerald-900/40 transition-all duration-200 hover:scale-[1.03] hover:bg-emerald-400 active:scale-[0.98] sm:text-sm"
+                      >
+                        {heroSlides[currentSlide]?.ctaPrimaryText || 'Explore Programs'}
+                        <ArrowRight className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => router.push(heroSlides[currentSlide]?.ctaSecondaryHref || '/about')}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:border-white/50 hover:bg-white/20 sm:text-sm"
+                      >
+                        {heroSlides[currentSlide]?.ctaSecondaryText || 'Learn More'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
+            </div>
 
-              {/* Slide indicators + arrows */}
-              <div className="flex items-center gap-3 ml-auto">
-                <button
-                  type="button"
-                  onClick={prevSlide}
-                  className="p-1.5 rounded-full bg-white/10 hover:bg-white/25 border border-white/20 text-white transition-all hover:scale-110 touch-manipulation"
-                  aria-label="Previous slide"
-                >
-                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-                </button>
-
-                <div className="flex items-center gap-1.5">
-                  {heroSlides.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => goToSlide(index)}
-                      className={`rounded-full transition-all duration-300 ${
-                        index === currentSlide
-                          ? 'bg-emerald-400 w-6 h-2'
-                          : 'bg-white/30 hover:bg-white/50 w-2 h-2'
-                      }`}
-                      aria-label={`Go to slide ${index + 1}`}
-                    />
-                  ))}
+            {/* ── Bottom bar: stats + slide controls ── */}
+            <div className="relative z-10 border-t border-white/10 bg-black/30 backdrop-blur-md">
+              <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4">
+                <div className="hidden items-center gap-6 text-white sm:flex lg:gap-8">
+                  {stats.map((stat, i) => {
+                    const Icon = stat.icon;
+                    return (
+                      <div key={i} className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 shrink-0 text-emerald-400" />
+                        <div>
+                          <p className="text-xs font-bold leading-none text-white">{stat.value}</p>
+                          <p className="mt-0.5 text-[10px] leading-none text-gray-400">{stat.label}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={nextSlide}
-                  className="p-1.5 rounded-full bg-white/10 hover:bg-white/25 border border-white/20 text-white transition-all hover:scale-110 touch-manipulation"
-                  aria-label="Next slide"
-                >
-                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                </button>
+                <div className="ml-auto flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={prevSlide}
+                    className="rounded-full border border-white/20 bg-white/10 p-1.5 text-white transition-all hover:scale-110 hover:bg-white/25 touch-manipulation"
+                    aria-label="Previous slide"
+                  >
+                    <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+
+                  <div className="flex items-center gap-1.5">
+                    {heroSlides.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => goToSlide(index)}
+                        className={`rounded-full transition-all duration-300 ${
+                          index === currentSlide
+                            ? 'h-2 w-6 bg-emerald-400'
+                            : 'h-2 w-2 bg-white/30 hover:bg-white/50'
+                        }`}
+                        aria-label={`Go to slide ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={nextSlide}
+                    className="rounded-full border border-white/20 bg-white/10 p-1.5 text-white transition-all hover:scale-110 hover:bg-white/25 touch-manipulation"
+                    aria-label="Next slide"
+                  >
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
