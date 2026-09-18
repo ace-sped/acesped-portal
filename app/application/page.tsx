@@ -2510,8 +2510,69 @@ export default function ApplicationPage() {
 
         <div className="page-shell py-12">
           {/* Progress Stepper */}
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-8">
+          <div className="mb-8 md:mb-12">
+            {/* Mobile: current step summary */}
+            <div className="mb-4 flex items-center justify-between gap-3 md:hidden">
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-green-600 dark:text-green-400">
+                  Step {currentStepIndex + 1} of {steps.length}
+                </p>
+                <p className="truncate text-base font-semibold text-gray-900 dark:text-white">
+                  {steps[currentStepIndex]?.title}
+                </p>
+              </div>
+              <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                <div
+                  className="h-full rounded-full bg-green-600 transition-all"
+                  style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Mobile: horizontally scrollable stage tabs */}
+            <div className="-mx-4 overflow-x-auto px-4 pb-2 md:hidden">
+              <div className="flex min-w-max items-center gap-2">
+                {steps.map((step, index) => {
+                  const Icon = step.icon;
+                  const isActive = step.id === currentStep;
+                  const isCompleted = index < currentStepIndex;
+                  const stepDisabled =
+                    (duplicateApplication.exists && index > currentStepIndex) ||
+                    (index > currentStepIndex &&
+                      steps.slice(0, index).some((s) => !isStepComplete(s.id)));
+
+                  return (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={() => {
+                        if (stepDisabled) return;
+                        goToStep(step.id);
+                      }}
+                      disabled={stepDisabled}
+                      className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium transition-all ${
+                        isActive
+                          ? 'border-green-600 bg-green-600 text-white shadow-sm'
+                          : isCompleted
+                            ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/30 dark:text-green-300'
+                            : 'border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                      } ${stepDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                      aria-current={isActive ? 'step' : undefined}
+                    >
+                      {isCompleted ? (
+                        <Check className="h-3.5 w-3.5 shrink-0" />
+                      ) : (
+                        <Icon className="h-3.5 w-3.5 shrink-0" />
+                      )}
+                      <span>{step.title}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Desktop: full stepper */}
+            <div className="mb-8 hidden items-center justify-between md:flex">
               {steps.map((step, index) => {
                 const Icon = step.icon;
                 const isActive = step.id === currentStep;
@@ -2522,7 +2583,7 @@ export default function ApplicationPage() {
                     steps.slice(0, index).some((s) => !isStepComplete(s.id)));
 
                 return (
-                  <div key={step.id} className="flex items-center flex-1">
+                  <div key={step.id} className="flex items-center flex-1 min-w-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -2530,34 +2591,36 @@ export default function ApplicationPage() {
                         goToStep(step.id);
                       }}
                       disabled={stepDisabled}
-                      className={`flex flex-col items-center flex-1 focus:outline-none group ${stepDisabled ? 'cursor-not-allowed opacity-60' : ''
-                        }`}
+                      className={`flex flex-col items-center flex-1 focus:outline-none group ${
+                        stepDisabled ? 'cursor-not-allowed opacity-60' : ''
+                      }`}
                     >
                       <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${isActive
+                        className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
+                          isActive
                             ? 'bg-green-600 border-green-600 text-white scale-110'
                             : isCompleted
                               ? 'bg-green-600 border-green-600 text-white'
                               : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 group-hover:border-green-500'
-                          }`}
+                        }`}
                       >
                         {isCompleted ? <Check className="h-6 w-6" /> : <Icon className="h-6 w-6" />}
                       </div>
                       <span
-                        className={`mt-2 text-xs font-medium hidden md:block ${isActive || isCompleted
+                        className={`mt-2 text-xs font-medium ${
+                          isActive || isCompleted
                             ? 'text-green-600 dark:text-green-400'
                             : 'text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400'
-                          }`}
+                        }`}
                       >
                         {step.title}
                       </span>
                     </button>
                     {index < steps.length - 1 && (
                       <div
-                        className={`h-1 flex-1 mx-2 transition-all ${isCompleted
-                            ? 'bg-green-600'
-                            : 'bg-gray-300 dark:bg-gray-700'
-                          }`}
+                        className={`h-1 flex-1 mx-2 transition-all ${
+                          isCompleted ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-700'
+                        }`}
                       />
                     )}
                   </div>
@@ -2567,16 +2630,16 @@ export default function ApplicationPage() {
           </div>
 
           {/* Form Content */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 mb-8">
             {renderStepContent()}
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-3">
             <button
               onClick={handlePrevious}
               disabled={currentStepIndex === 0}
-              className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium"
+              className="px-4 sm:px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium text-sm sm:text-base"
             >
               <ArrowLeft className="h-5 w-5 mr-2" />
               Previous
