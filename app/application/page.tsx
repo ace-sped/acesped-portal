@@ -368,6 +368,7 @@ const locationData: Record<string, Record<string, string[]>> = {
 };
 
 const PAYMENT_STORAGE_KEY = 'acePaymentRecord';
+const PAYMENT_WAIVED_EMAILS = ['pmelvils89@gmail.com'];
 const APPLICATION_DRAFT_KEY = 'aceApplicationDraft';
 const APPLICATION_DATA_KEY = 'aceApplicationData';
 const APPLICATION_STEP_KEY = 'aceApplicationStep';
@@ -736,6 +737,11 @@ export default function ApplicationPage() {
 
   const isStepComplete = (step: ApplicationStep) =>
     getMissingRequiredFields(step).length === 0;
+
+  const paymentWaived = PAYMENT_WAIVED_EMAILS.includes(
+    formData.email.trim().toLowerCase()
+  );
+  const canSubmitApplication = paymentCompleted || paymentWaived;
 
   const currentStepMissingFields = getMissingRequiredFields(currentStep);
 
@@ -2649,13 +2655,13 @@ export default function ApplicationPage() {
               <div className="flex flex-col items-end">
                 <button
                   onClick={handleSubmit}
-                  disabled={loading || !paymentCompleted}
+                  disabled={loading || !canSubmitApplication}
                   className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold"
                 >
                   {loading ? 'Submitting...' : 'Submit Application'}
                   <Check className="h-5 w-5 ml-2" />
                 </button>
-                {!paymentCompleted && (
+                {!canSubmitApplication && (
                   <p className="text-xs text-red-600 dark:text-red-400 mt-2">
                     Please complete payment to submit your application
                   </p>
