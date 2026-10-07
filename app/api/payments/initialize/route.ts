@@ -60,11 +60,16 @@ export async function POST(request: NextRequest) {
       console.log('Using Paystack LIVE mode - will redirect to live payment page');
     }
 
-    // Set callback URL - check if it's for skill application or regular application
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const callbackUrl = callback_path
-      ? `${baseUrl}${callback_path}?payment_callback=true`
-      : `${baseUrl}/application?payment_callback=true`;
+    // Prefer the live site origin so Paystack returns to this deployment, not a stale env URL.
+    const headerOrigin = request.headers.get('origin');
+    let baseUrl = headerOrigin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    try {
+      baseUrl = new URL(baseUrl).origin;
+    } catch {
+      baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    }
+    const returnPath = callback_path || '/application';
+    const callbackUrl = `${baseUrl}${returnPath}?payment_callback=true`;
 
     const hasCustomMetadata = metadata && typeof metadata === 'object' && Object.keys(metadata).length > 0;
     

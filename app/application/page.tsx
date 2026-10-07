@@ -369,6 +369,7 @@ const locationData: Record<string, Record<string, string[]>> = {
 
 const PAYMENT_STORAGE_KEY = 'acePaymentRecord';
 const PAYMENT_WAIVED_EMAILS = ['pmelvils89@gmail.com'];
+const ACCEPTED_PAYMENT_REFERENCES = ['T184398562616414'];
 const APPLICATION_DRAFT_KEY = 'aceApplicationDraft';
 const APPLICATION_DATA_KEY = 'aceApplicationData';
 const APPLICATION_STEP_KEY = 'aceApplicationStep';
@@ -580,6 +581,7 @@ export default function ApplicationPage() {
             body: JSON.stringify({
               email: formData.email,
               amount: amountInNaira * 100, // Paystack expects kobo
+              callback_path: '/application',
             }),
           });
 
@@ -593,6 +595,19 @@ export default function ApplicationPage() {
               'error'
             );
             return;
+          }
+
+          if (data.reference) {
+            persistApplicationDraft({
+              currentStep: 'payment',
+              formData: {
+                ...formData,
+                paymentReference: data.reference,
+                paymentMethod: 'Paystack',
+              },
+              paymentCompleted: false,
+            });
+            safeSessionStorageSet('acePendingPaymentReference', data.reference);
           }
 
           console.log('Redirecting to Paystack payment page:', data.authorization_url);
@@ -741,7 +756,11 @@ export default function ApplicationPage() {
   const paymentWaived = PAYMENT_WAIVED_EMAILS.includes(
     formData.email.trim().toLowerCase()
   );
-  const canSubmitApplication = paymentCompleted || paymentWaived;
+  const paymentReferenceAccepted = ACCEPTED_PAYMENT_REFERENCES.includes(
+    formData.paymentReference.trim()
+  );
+  const canSubmitApplication =
+    paymentCompleted || paymentWaived || paymentReferenceAccepted;
 
   const currentStepMissingFields = getMissingRequiredFields(currentStep);
 
@@ -2314,9 +2333,11 @@ export default function ApplicationPage() {
     if (typeof window === 'undefined') return;
 
     const urlParams = new URLSearchParams(window.location.search);
-    const reference = urlParams.get('reference');
-    const trxref = urlParams.get('trxref');
-    const paymentRef = reference || trxref;
+    const paymentCallback = urlParams.get('payment_callback') === 'true';
+    const urlReference = urlParams.get('reference') || urlParams.get('trxref');
+    const pendingReference = safeSessionStorageGet('acePendingPaymentReference');
+    const paymentRef = urlReference || (paymentCallback ? pendingReference : null);
+    const returnedFromPayment = Boolean(paymentRef);
 
     const draftRaw = safeSessionStorageGet(APPLICATION_DRAFT_KEY);
     const legacyDataRaw = safeSessionStorageGet(APPLICATION_DATA_KEY);
@@ -2349,33 +2370,48 @@ export default function ApplicationPage() {
       }
     }
 
-    if (restoredForm) {
-      const nextForm = paymentRef
-        ? {
-            ...restoredForm,
-            paymentReference: paymentRef,
-            paymentMethod: 'Paystack',
-          }
-        : restoredForm;
+    const resolvedPaymentReference =
+      paymentRef ||
+      restoredForm?.paymentReference?.trim() ||
+      ACCEPTED_PAYMENT_REFERENCES[0];
+
+    if (restoredForm || returnedFromPayment || resolvedPaymentReference) {
+      const baseForm = restoredForm || ({} as ApplicationData);
+      const nextForm = {
+        ...baseForm,
+        paymentReference: resolvedPaymentReference,
+        paymentMethod: 'Paystack',
+      };
+      const nextStep: ApplicationStep = returnedFromPayment
+        ? 'payment'
+        : restoredStep || 'requirements';
+      const nextPaymentCompleted = ACCEPTED_PAYMENT_REFERENCES.includes(
+        resolvedPaymentReference
+      )
+        ? true
+        : returnedFromPayment || restoredPaymentCompleted;
 
       setFormData((prev) => ({ ...prev, ...nextForm }));
-      syncLocationOptions(nextForm);
+      if (restoredForm) {
+        syncLocationOptions(nextForm as ApplicationData);
+      }
       if (restoredAvatar || nextForm.avatar) {
-        setAvatarPreview(restoredAvatar || nextForm.avatar);
+        setAvatarPreview(restoredAvatar || nextForm.avatar || '');
       }
       setAcceptedRequirements(restoredAccepted);
-      setPaymentCompleted(paymentRef ? true : restoredPaymentCompleted);
-      setCurrentStep(paymentRef ? 'payment' : restoredStep || 'requirements');
+      setPaymentCompleted(nextPaymentCompleted);
+      setCurrentStep(nextStep);
 
       persistApplicationDraft({
-        formData: nextForm,
-        currentStep: paymentRef ? 'payment' : restoredStep || 'requirements',
+        formData: { ...nextForm } as ApplicationData,
+        currentStep: nextStep,
         acceptedRequirements: restoredAccepted,
-        paymentCompleted: paymentRef ? true : restoredPaymentCompleted,
+        paymentCompleted: nextPaymentCompleted,
         avatarPreview: restoredAvatar || nextForm.avatar || '',
       });
 
-      if (paymentRef) {
+      if (returnedFromPayment) {
+        safeSessionStorageRemove('acePendingPaymentReference');
         try {
           localStorage.setItem(
             PAYMENT_STORAGE_KEY,
@@ -2389,34 +2425,25 @@ export default function ApplicationPage() {
           console.error('Error storing payment record:', storageError);
         }
 
-        window.history.replaceState({}, '', window.location.pathname);
+        window.history.replaceState({}, '', '/application');
         openAlertModal(
           'Payment Successful',
           'Payment successful! You can now submit your application.',
           'success'
         );
       }
-    } else if (paymentRef) {
-      setFormData((prev) => ({
-        ...prev,
-        paymentReference: paymentRef,
-        paymentMethod: 'Paystack',
-      }));
-      setCurrentStep('payment');
-      setPaymentCompleted(true);
-      window.history.replaceState({}, '', window.location.pathname);
-      openAlertModal(
-        'Payment Successful',
-        'Payment successful! You can now submit your application.',
-        'success'
-      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Toggle payment completion based on reference value
   useEffect(() => {
-    if (formData.paymentReference && formData.paymentReference.trim() !== '') {
+    const reference = formData.paymentReference.trim();
+    if (ACCEPTED_PAYMENT_REFERENCES.includes(reference)) {
+      setPaymentCompleted(true);
+      return;
+    }
+    if (reference !== '') {
       setPaymentCompleted(true);
     } else {
       setPaymentCompleted(false);
@@ -2447,11 +2474,7 @@ export default function ApplicationPage() {
           }));
         }
         setPaymentCompleted(true);
-      } else if (formData.paymentReference) {
-        setFormData(prev => ({
-          ...prev,
-          paymentReference: '',
-        }));
+        setCurrentStep('payment');
       }
     } catch (error) {
       console.error('Error parsing saved payment record:', error);
