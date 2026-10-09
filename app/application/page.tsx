@@ -373,6 +373,7 @@ const ACCEPTED_PAYMENT_REFERENCES = ['T184398562616414'];
 const APPLICATION_DRAFT_KEY = 'aceApplicationDraft';
 const APPLICATION_DATA_KEY = 'aceApplicationData';
 const APPLICATION_STEP_KEY = 'aceApplicationStep';
+const APPLICATION_DRAFT_ID_KEY = 'aceApplicationDraftId';
 
 type ApplicationDraft = {
   formData: ApplicationData;
@@ -502,7 +503,7 @@ export default function ApplicationPage() {
   };
 
   const persistApplicationDraft = (overrides?: Partial<ApplicationDraft>) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return null;
 
     const draft: ApplicationDraft = {
       formData: overrides?.formData ?? formData,
@@ -520,12 +521,75 @@ export default function ApplicationPage() {
     } catch (storageError) {
       console.error('Error saving application draft:', storageError);
     }
+
+    return draft;
+  };
+
+  const ensureApplicationDraftId = () => {
+    try {
+      const existing = localStorage.getItem(APPLICATION_DRAFT_ID_KEY);
+      if (existing) return existing;
+      const id = crypto.randomUUID();
+      localStorage.setItem(APPLICATION_DRAFT_ID_KEY, id);
+      return id;
+    } catch {
+      return '';
+    }
+  };
+
+  const saveApplicationDraftToDatabase = async (draft: ApplicationDraft) => {
+    try {
+      const id = ensureApplicationDraftId();
+      const response = await fetch('/api/applications/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: id || undefined,
+          email: draft.formData.email,
+          currentStep: draft.currentStep,
+          acceptedRequirements: draft.acceptedRequirements,
+          paymentCompleted: draft.paymentCompleted,
+          formData: draft.formData,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && data?.id) {
+        localStorage.setItem(APPLICATION_DRAFT_ID_KEY, data.id);
+      }
+    } catch (error) {
+      console.error('Error saving application draft to database:', error);
+    }
   };
 
   const clearApplicationDraft = () => {
+    let draftId = '';
+    let email = '';
+    try {
+      draftId = localStorage.getItem(APPLICATION_DRAFT_ID_KEY) || '';
+      localStorage.removeItem(APPLICATION_DRAFT_ID_KEY);
+    } catch {
+      // ignore
+    }
+    try {
+      const raw = safeSessionStorageGet(APPLICATION_DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as ApplicationDraft;
+        email = parsed.formData?.email || '';
+      }
+    } catch {
+      // ignore
+    }
     safeSessionStorageRemove(APPLICATION_DRAFT_KEY);
     safeSessionStorageRemove(APPLICATION_DATA_KEY);
     safeSessionStorageRemove(APPLICATION_STEP_KEY);
+    if (draftId || email) {
+      const params = new URLSearchParams();
+      if (draftId) params.set('id', draftId);
+      if (email) params.set('email', email);
+      void fetch(`/api/applications/draft?${params.toString()}`, { method: 'DELETE' }).catch(() => {
+        // ignore
+      });
+    }
   };
 
   // Paystack payment handler - mirrors SkillApplication dynamic initialize flow
@@ -807,7 +871,10 @@ export default function ApplicationPage() {
       }
     }
 
-    persistApplicationDraft({ currentStep: stepId });
+    const draft = persistApplicationDraft({ currentStep: stepId });
+    if (draft) {
+      void saveApplicationDraftToDatabase(draft);
+    }
     setCurrentStep(stepId);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -893,7 +960,10 @@ export default function ApplicationPage() {
 
     if (currentStepIndex < steps.length - 1) {
       const nextStep = steps[currentStepIndex + 1].id;
-      persistApplicationDraft({ currentStep: nextStep });
+      const draft = persistApplicationDraft({ currentStep: nextStep });
+      if (draft) {
+        void saveApplicationDraftToDatabase(draft);
+      }
       setCurrentStep(nextStep);
       if (typeof window !== 'undefined') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2367,6 +2437,44 @@ export default function ApplicationPage() {
         restoredAvatar = restoredForm.avatar || '';
       } catch (error) {
         console.error('Error parsing legacy application data:', error);
+      }
+    }
+
+    if (!restoredForm && !returnedFromPayment) {
+      let draftId = '';
+      try {
+        draftId = localStorage.getItem(APPLICATION_DRAFT_ID_KEY) || '';
+      } catch {
+        draftId = '';
+      }
+
+      if (draftId) {
+        void fetch(`/api/applications/draft?id=${encodeURIComponent(draftId)}`)
+          .then(async (response) => (response.ok ? response.json() : null))
+          .then((data) => {
+            const saved = data?.draft;
+            if (!saved?.formData || typeof saved.formData !== 'object') return;
+
+            const nextForm = saved.formData as ApplicationData;
+            const nextStep = (saved.currentStep as ApplicationStep) || 'requirements';
+            setFormData((prev) => ({ ...prev, ...nextForm }));
+            syncLocationOptions(nextForm);
+            if (nextForm.avatar) setAvatarPreview(nextForm.avatar);
+            setAcceptedRequirements(Boolean(saved.acceptedRequirements));
+            setPaymentCompleted(Boolean(saved.paymentCompleted));
+            setCurrentStep(nextStep);
+            persistApplicationDraft({
+              formData: nextForm,
+              currentStep: nextStep,
+              acceptedRequirements: Boolean(saved.acceptedRequirements),
+              paymentCompleted: Boolean(saved.paymentCompleted),
+              avatarPreview: nextForm.avatar || '',
+            });
+          })
+          .catch((error) => {
+            console.error('Error restoring application draft from database:', error);
+          });
+        return;
       }
     }
 

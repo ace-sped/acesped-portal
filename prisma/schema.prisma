@@ -151,6 +151,19 @@ model Application {
   @@map("applications")
 }
 
+model ApplicationDraft {
+  id                   String   @id @default(cuid())
+  email                String?  @unique
+  currentStep          String
+  acceptedRequirements Boolean  @default(false)
+  paymentCompleted     Boolean  @default(false)
+  formData             Json
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("application_drafts")
+}
+
 model Service {
   id           String    @id @default(cuid())
   title        String
