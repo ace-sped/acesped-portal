@@ -86,7 +86,7 @@ function normalizeEmail(value: unknown): string | null {
   return email;
 }
 
-function sanitizeFormData(value: unknown): Prisma.InputJsonObject {
+function sanitizeFormData(value: unknown, email: string | null): Prisma.InputJsonObject {
   const source = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
   const formData: Record<string, string> = {};
 
@@ -102,6 +102,10 @@ function sanitizeFormData(value: unknown): Prisma.InputJsonObject {
       continue;
     }
     formData[field] = raw;
+  }
+
+  if (email) {
+    formData.email = email;
   }
 
   return formData;
@@ -140,10 +144,7 @@ export async function POST(request: NextRequest) {
     const requestedId = typeof body?.id === 'string' ? body.id.trim() : '';
     const id = requestedId || undefined;
     const email = normalizeEmail(body?.email ?? body?.formData?.email);
-    const formData = sanitizeFormData(body?.formData);
-    if (email) {
-      formData.email = email;
-    }
+    const formData = sanitizeFormData(body?.formData, email);
 
     const data = {
       email,
