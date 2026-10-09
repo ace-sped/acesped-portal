@@ -1,4 +1,4 @@
-import { Barlow_Condensed, Source_Sans_3, Lora } from 'next/font/google';
+import { Barlow_Condensed, Lora } from 'next/font/google';
 
 export const snrdbDisplay = Barlow_Condensed({
   subsets: ['latin'],
@@ -6,11 +6,10 @@ export const snrdbDisplay = Barlow_Condensed({
   variable: '--font-snrdb-display',
 });
 
-export const snrdbBody = Source_Sans_3({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-snrdb-body',
-});
+// Loaded with a stylesheet link. next/font cannot fetch Source Sans 3 during a Turbopack production build.
+export const snrdbBody = {
+  variable: 'snrdb-body-font',
+};
 
 export const snrdbSerif = Lora({
   subsets: ['latin'],

@@ -37,7 +37,16 @@ export default function SnrdbPage() {
         } as CSSProperties
       }
     >
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap"
+      />
       <style>{`
+        .snrdb-body-font {
+          --font-snrdb-body: 'Source Sans 3', system-ui, sans-serif;
+        }
         @keyframes snrdb-rise {
           from { opacity: 0; transform: translateY(1.25rem); }
           to { opacity: 1; transform: translateY(0); }
