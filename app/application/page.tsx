@@ -1,15 +1,14 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   ArrowRight, ArrowLeft, Check, Upload, X, User, Users,
   GraduationCap, Briefcase, FileText, Camera,
   Mail, Phone, MapPin, Calendar, BookOpen, CreditCard,
-  Info, AlertTriangle, XCircle, CheckCircle
+  Info, AlertTriangle, XCircle, CheckCircle, ClipboardList
 } from 'lucide-react';
 import { TbCurrencyNaira } from 'react-icons/tb';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import Navbar from '../components/navbar/page';
 import Footer from '../components/footer/page';
 import { safeSessionStorageGet, safeSessionStorageRemove, safeSessionStorageSet } from '../../lib/safe-browser-storage';
@@ -23,6 +22,7 @@ type ApplicationStep =
   | 'employment'
   | 'research'
   | 'recommendations'
+  | 'review'
   | 'payment';
 
 interface ApplicationData {
@@ -374,6 +374,7 @@ const APPLICATION_DRAFT_KEY = 'aceApplicationDraft';
 const APPLICATION_DATA_KEY = 'aceApplicationData';
 const APPLICATION_STEP_KEY = 'aceApplicationStep';
 const APPLICATION_DRAFT_ID_KEY = 'aceApplicationDraftId';
+const TEMPORARILY_ALLOW_STAGE_NAVIGATION = true;
 
 type ApplicationDraft = {
   formData: ApplicationData;
@@ -384,7 +385,6 @@ type ApplicationDraft = {
 };
 
 export default function ApplicationPage() {
-  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<ApplicationStep>('requirements');
   const [acceptedRequirements, setAcceptedRequirements] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -402,6 +402,7 @@ export default function ApplicationPage() {
   });
   const [duplicateCheckLoading, setDuplicateCheckLoading] = useState(false);
   const [duplicateCheckError, setDuplicateCheckError] = useState<string | null>(null);
+  const loadedDraftEmailRef = useRef<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [alertModal, setAlertModal] = useState<{
     title: string;
@@ -710,6 +711,7 @@ export default function ApplicationPage() {
     { id: 'employment', title: 'Employment', icon: Briefcase },
     { id: 'research', title: 'Research', icon: FileText },
     { id: 'recommendations', title: 'Recommendations', icon: Mail },
+    { id: 'review', title: 'Review & Submit', icon: ClipboardList },
     { id: 'payment', title: 'Payment', icon: TbCurrencyNaira },
   ];
 
@@ -806,6 +808,9 @@ export default function ApplicationPage() {
         if (!isNonEmpty(formData.referee2Institution)) missing.push('Second Referee Institution');
         break;
 
+      case 'review':
+        break;
+
       case 'payment':
         if (!paymentCompleted) missing.push('Completed Payment');
         break;
@@ -837,22 +842,22 @@ export default function ApplicationPage() {
   };
 
   const duplicateWarningText = duplicateApplication.exists
-    ? `An application for ${formData.email || 'this email'} already exists${duplicateApplication.applicationNumber ? ` (Ref: ${duplicateApplication.applicationNumber})` : ''
-    }. Please use a different email address before continuing.`
+    ? `An application for ${formData.email.trim() || 'this email'} already exists [Ref: ${duplicateApplication.applicationNumber || 'ref'}]. Please use a different email address before continuing.`
     : '';
 
-  const isNextDisabled =
-    duplicateApplication.exists || currentStepMissingFields.length > 0;
+  const isNextDisabled = TEMPORARILY_ALLOW_STAGE_NAVIGATION
+    ? false
+    : duplicateApplication.exists || currentStepMissingFields.length > 0;
 
   const goToStep = (stepId: ApplicationStep) => {
     const targetIndex = steps.findIndex(step => step.id === stepId);
-    if (duplicateApplication.exists && targetIndex > currentStepIndex) {
+    if (!TEMPORARILY_ALLOW_STAGE_NAVIGATION && duplicateApplication.exists && targetIndex > currentStepIndex) {
       openAlertModal('Existing Application', duplicateWarningText, 'warning');
       return;
     }
 
     // Going forward: all previous stages must be complete
-    if (targetIndex > currentStepIndex) {
+    if (!TEMPORARILY_ALLOW_STAGE_NAVIGATION && targetIndex > currentStepIndex) {
       for (let i = 0; i < targetIndex; i++) {
         const step = steps[i];
         const missing = getMissingRequiredFields(step.id);
@@ -943,19 +948,21 @@ export default function ApplicationPage() {
   };
 
   const handleNext = () => {
-    if (duplicateApplication.exists) {
+    if (!TEMPORARILY_ALLOW_STAGE_NAVIGATION && duplicateApplication.exists) {
       openAlertModal('Existing Application', duplicateWarningText, 'warning');
       return;
     }
 
-    const missing = getMissingRequiredFields(currentStep);
-    if (missing.length > 0) {
-      openAlertModal(
-        'Incomplete Stage',
-        `Please complete all required fields before continuing:\n• ${missing.join('\n• ')}`,
-        'warning'
-      );
-      return;
+    if (!TEMPORARILY_ALLOW_STAGE_NAVIGATION) {
+      const missing = getMissingRequiredFields(currentStep);
+      if (missing.length > 0) {
+        openAlertModal(
+          'Incomplete Stage',
+          `Please complete all required fields before continuing:\n• ${missing.join('\n• ')}`,
+          'warning'
+        );
+        return;
+      }
     }
 
     if (currentStepIndex < steps.length - 1) {
@@ -1127,6 +1134,62 @@ export default function ApplicationPage() {
           applicationNumber: data.applicationNumber ?? null,
         });
         setDuplicateCheckError(null);
+
+        if (data.exists) return;
+
+        const normalizedEmail = email.trim().toLowerCase();
+        if (loadedDraftEmailRef.current === normalizedEmail) return;
+
+        const draftResponse = await fetch(
+          `/api/applications/draft?email=${encodeURIComponent(normalizedEmail)}`,
+          { signal: controller.signal }
+        );
+        if (draftResponse.status === 404) return;
+        const draftPayload = await draftResponse.json().catch(() => null);
+        if (!draftResponse.ok || !draftPayload?.draft?.formData) return;
+
+        const saved = draftPayload.draft;
+        const nextForm = {
+          ...(saved.formData as ApplicationData),
+          email: String(saved.formData.email || normalizedEmail),
+        };
+        const allowedSteps: ApplicationStep[] = [
+          'requirements',
+          'personal',
+          'nextOfKin',
+          'program',
+          'education',
+          'employment',
+          'research',
+          'recommendations',
+          'review',
+          'payment',
+        ];
+        const nextStep = allowedSteps.includes(saved.currentStep)
+          ? (saved.currentStep as ApplicationStep)
+          : 'personal';
+
+        loadedDraftEmailRef.current = normalizedEmail;
+        if (saved.id) {
+          try {
+            localStorage.setItem(APPLICATION_DRAFT_ID_KEY, saved.id);
+          } catch {
+            // ignore
+          }
+        }
+        setFormData((prev) => ({ ...prev, ...nextForm }));
+        syncLocationOptions(nextForm);
+        if (nextForm.avatar) setAvatarPreview(nextForm.avatar);
+        setAcceptedRequirements(Boolean(saved.acceptedRequirements));
+        setPaymentCompleted(Boolean(saved.paymentCompleted));
+        setCurrentStep(nextStep);
+        persistApplicationDraft({
+          formData: nextForm,
+          currentStep: nextStep,
+          acceptedRequirements: Boolean(saved.acceptedRequirements),
+          paymentCompleted: Boolean(saved.paymentCompleted),
+          avatarPreview: nextForm.avatar || '',
+        });
       } catch (error: any) {
         if (controller.signal.aborted) return;
         console.error('Error checking existing application:', error);
@@ -1169,6 +1232,42 @@ export default function ApplicationPage() {
     const amount = getApplicationPriceInNaira();
     return `₦${amount.toLocaleString()}`;
   }, [selectedProgram]);
+
+  const reviewText = (value: string | undefined | null) => {
+    const text = typeof value === 'string' ? value.trim() : '';
+    if (!text) return '—';
+    if (text.startsWith('http') || text.startsWith('data:')) return 'Uploaded';
+    return text;
+  };
+
+  const renderReviewSection = (
+    title: string,
+    step: ApplicationStep,
+    rows: Array<[string, string | undefined | null]>
+  ) => (
+    <section className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 sm:p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+        <button
+          type="button"
+          onClick={() => goToStep(step)}
+          className="text-sm font-medium text-green-700 hover:text-green-800 dark:text-green-300 dark:hover:text-green-200"
+        >
+          Edit
+        </button>
+      </div>
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+        {rows.map(([label, value]) => (
+          <div key={label}>
+            <dt className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {label}
+            </dt>
+            <dd className="mt-1 break-words text-sm text-gray-900 dark:text-white">{reviewText(value)}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -1390,9 +1489,7 @@ export default function ApplicationPage() {
                 )}
                 {duplicateApplication.exists && (
                   <div className="mt-2 text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                    An application for <strong>{formData.email}</strong> already exists
-                    {duplicateApplication.applicationNumber ? ` (Ref: ${duplicateApplication.applicationNumber})` : ''}.
-                    Please use a different email address before continuing.
+                    {duplicateWarningText}
                   </div>
                 )}
                 {!duplicateApplication.exists && duplicateCheckError && (
@@ -2292,6 +2389,99 @@ export default function ApplicationPage() {
           </div>
         );
 
+      case 'review':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Review Application and Submit</h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Check the details from every stage. Use Edit to change a section, then submit when the application is ready.
+              </p>
+            </div>
+
+            {renderReviewSection('Requirements', 'requirements', [
+              ['Requirements accepted', acceptedRequirements ? 'Yes' : 'No'],
+            ])}
+            {renderReviewSection('Personal Information', 'personal', [
+              ['Surname', formData.surname],
+              ['First name', formData.firstname],
+              ['Middle name', formData.middlename],
+              ['Maiden name', formData.maidenName],
+              ['Email', formData.email],
+              ['Phone', formData.phoneNumber],
+              ['Alternate phone', formData.alternatePhone],
+              ['Date of birth', formData.dateOfBirth],
+              ['Gender', formData.gender],
+              ['Marital status', formData.maritalStatus],
+              ['Country of residence', formData.nationality],
+              ['Nationality', formData.country],
+              ['State of origin', formData.state],
+              ['LGA / Municipality', formData.city],
+              ['Home town', formData.homeTown],
+              ['Residential address', formData.address],
+              ['Home address', formData.homeAddress],
+              ['Postal code', formData.postalCode],
+              ['Religion', formData.religion],
+              ['National ID', formData.nationalId],
+              ['National ID document', formData.nationalIdFile],
+              ['Passport photograph', formData.avatar],
+            ])}
+            {renderReviewSection('Next of Kin', 'nextOfKin', [
+              ['First name', formData.kinFirstname],
+              ['Surname', formData.kinSurname],
+              ['Relationship', formData.kinRelationship],
+              ['Phone', formData.kinPhone],
+              ['Email', formData.kinEmail],
+              ['Address', formData.kinAddress],
+            ])}
+            {renderReviewSection('Program', 'program', [
+              ['Program type', formData.programType],
+              ['Admission session', formData.admissionSession],
+              ['Program choice', formData.programChoice],
+              ['Mode of study', formData.modeOfStudy],
+            ])}
+            {renderReviewSection('Education', 'education', [
+              ['Previous degree', formData.previousDegree],
+              ['Field of study', formData.previousFieldOfStudy],
+              ['Institution', formData.previousInstitution],
+              ['Year of graduation', formData.previousGraduationYear],
+              ['GPA / CGPA', formData.previousGPA],
+              ['Transcript', formData.transcriptFile],
+              ['Certificate', formData.certificateFile],
+            ])}
+            {renderReviewSection('Employment', 'employment', [
+              ['Employment status', formData.employmentStatus],
+              ['Current employer', formData.currentEmployer],
+              ['Job title', formData.jobTitle],
+              ['Start date', formData.employmentStartDate],
+              ['End date', formData.employmentEndDate],
+              ['Reason for pursuing', formData.reasonForPursuing],
+            ])}
+            {renderReviewSection('Research', 'research', [
+              ['Title', formData.researchTitle],
+              ['Abstract', formData.researchAbstract],
+              ['Objectives', formData.researchObjectives],
+              ['Methodology', formData.researchMethodology],
+              ['Proposal', formData.proposalFile],
+            ])}
+            {renderReviewSection('Recommendations', 'recommendations', [
+              ['First referee', formData.referee1Name],
+              ['First referee email', formData.referee1Email],
+              ['First referee phone', formData.referee1Phone],
+              ['First referee institution', formData.referee1Institution],
+              ['Second referee', formData.referee2Name],
+              ['Second referee email', formData.referee2Email],
+              ['Second referee phone', formData.referee2Phone],
+              ['Second referee institution', formData.referee2Institution],
+            ])}
+            {renderReviewSection('Payment', 'payment', [
+              ['Payment method', formData.paymentMethod],
+              ['Payment reference', formData.paymentReference],
+              ['Payment status', paymentCompleted || paymentWaived || paymentReferenceAccepted ? 'Completed' : 'Not completed'],
+            ])}
+          </div>
+        );
+
       case 'payment':
         return (
           <div className="space-y-6">
@@ -2386,7 +2576,7 @@ export default function ApplicationPage() {
 
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
               <p className="text-sm text-yellow-900 dark:text-yellow-100">
-                <strong>Note:</strong> After successful payment, you can proceed to submit your application.
+                <strong>Note:</strong> After payment, return to Review &amp; Submit to send your application.
                 You will receive a confirmation email with your application reference number within 24 hours.
               </p>
             </div>
@@ -2673,10 +2863,11 @@ export default function ApplicationPage() {
                   const Icon = step.icon;
                   const isActive = step.id === currentStep;
                   const isCompleted = index < currentStepIndex;
-                  const stepDisabled =
-                    (duplicateApplication.exists && index > currentStepIndex) ||
-                    (index > currentStepIndex &&
-                      steps.slice(0, index).some((s) => !isStepComplete(s.id)));
+                  const stepDisabled = TEMPORARILY_ALLOW_STAGE_NAVIGATION
+                    ? false
+                    : (duplicateApplication.exists && index > currentStepIndex) ||
+                      (index > currentStepIndex &&
+                        steps.slice(0, index).some((s) => !isStepComplete(s.id)));
 
                   return (
                     <button
@@ -2714,10 +2905,11 @@ export default function ApplicationPage() {
                 const Icon = step.icon;
                 const isActive = step.id === currentStep;
                 const isCompleted = index < currentStepIndex;
-                const stepDisabled =
-                  (duplicateApplication.exists && index > currentStepIndex) ||
-                  (index > currentStepIndex &&
-                    steps.slice(0, index).some((s) => !isStepComplete(s.id)));
+                const stepDisabled = TEMPORARILY_ALLOW_STAGE_NAVIGATION
+                  ? false
+                  : (duplicateApplication.exists && index > currentStepIndex) ||
+                    (index > currentStepIndex &&
+                      steps.slice(0, index).some((s) => !isStepComplete(s.id)));
 
                 return (
                   <div key={step.id} className="flex items-center flex-1 min-w-0">
@@ -2782,22 +2974,34 @@ export default function ApplicationPage() {
               Previous
             </button>
 
-            {currentStepIndex === steps.length - 1 ? (
-              <div className="flex flex-col items-end">
+            {currentStep === 'review' ? (
+              <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-start">
                 <button
-                  onClick={handleSubmit}
-                  disabled={loading || !canSubmitApplication}
-                  className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold"
+                  onClick={handleNext}
+                  disabled={isNextDisabled}
+                  className="px-6 py-3 bg-white dark:bg-gray-800 text-green-700 dark:text-green-300 border border-green-600 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold"
                 >
-                  {loading ? 'Submitting...' : 'Submit Application'}
-                  <Check className="h-5 w-5 ml-2" />
+                  Next
+                  <ArrowRight className="h-5 w-5 ml-2" />
                 </button>
-                {!canSubmitApplication && (
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                    Please complete payment to submit your application
-                  </p>
-                )}
+                <div className="flex flex-col items-end">
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading || !canSubmitApplication}
+                    className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold"
+                  >
+                    {loading ? 'Submitting...' : 'Submit Application'}
+                    <Check className="h-5 w-5 ml-2" />
+                  </button>
+                  {!canSubmitApplication && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-right">
+                      Please complete payment to submit your application
+                    </p>
+                  )}
+                </div>
               </div>
+            ) : currentStepIndex === steps.length - 1 ? (
+              <span />
             ) : (
               <div className="flex flex-col items-end">
                 <button
@@ -2813,7 +3017,7 @@ export default function ApplicationPage() {
                     {duplicateWarningText}
                   </p>
                 )}
-                {!duplicateApplication.exists && currentStepMissingFields.length > 0 && (
+                {!TEMPORARILY_ALLOW_STAGE_NAVIGATION && !duplicateApplication.exists && currentStepMissingFields.length > 0 && (
                   <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-right max-w-md">
                     Please complete all required fields in this stage before continuing.
                   </p>
@@ -2833,8 +3037,9 @@ export default function ApplicationPage() {
                 Application Submitted!
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-                Thank you for applying. A confirmation email containing your application details has been sent to{' '}
-                <span className="font-semibold text-gray-900 dark:text-white">{formData.email || 'your email address'}</span>. Please keep it safe for your records.
+                Your application has been submitted. A confirmation email has been sent to{' '}
+                <span className="font-semibold text-gray-900 dark:text-white">{formData.email || 'your email address'}</span>.
+                Continue to payment to complete your application.
               </p>
               <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-4 mb-6 text-left space-y-3 border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center justify-between">
@@ -2859,11 +3064,14 @@ export default function ApplicationPage() {
               <button
                 onClick={() => {
                   setShowSuccessModal(false);
-                  router.push('/');
+                  setCurrentStep('payment');
+                  if (typeof window !== 'undefined') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
                 }}
                 className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg hover:scale-[1.02] transition-all"
               >
-                Go to Homepage
+                Proceed to Application Payment
               </button>
               <button
                 onClick={() => setShowSuccessModal(false)}

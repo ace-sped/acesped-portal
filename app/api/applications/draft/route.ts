@@ -11,6 +11,7 @@ const APPLICATION_STEPS = new Set([
   'employment',
   'research',
   'recommendations',
+  'review',
   'payment',
 ]);
 
@@ -114,11 +115,17 @@ function sanitizeFormData(value: unknown, email: string | null): Prisma.InputJso
 export async function GET(request: NextRequest) {
   try {
     const id = request.nextUrl.searchParams.get('id')?.trim();
-    if (!id) {
-      return NextResponse.json({ success: false, message: 'Draft id is required.' }, { status: 400 });
+    const email = normalizeEmail(request.nextUrl.searchParams.get('email'));
+    if (!id && !email) {
+      return NextResponse.json(
+        { success: false, message: 'Draft id or email is required.' },
+        { status: 400 }
+      );
     }
 
-    const draft = await prisma.applicationDraft.findUnique({ where: { id } });
+    const draft = id
+      ? await prisma.applicationDraft.findUnique({ where: { id } })
+      : await prisma.applicationDraft.findUnique({ where: { email: email as string } });
     if (!draft) {
       return NextResponse.json({ success: false, message: 'Draft not found.' }, { status: 404 });
     }
