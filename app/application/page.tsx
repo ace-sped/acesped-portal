@@ -3071,7 +3071,7 @@ export default function ApplicationPage() {
                 }}
                 className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg hover:scale-[1.02] transition-all"
               >
-                Proceed to Application Payment
+                Proceed to Application Payment (Only Nigerians)
               </button>
               <button
                 onClick={() => setShowSuccessModal(false)}

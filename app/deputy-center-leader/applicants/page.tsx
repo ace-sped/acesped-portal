@@ -11,14 +11,9 @@ import {
   Filter,
   AlertCircle,
   X,
-  Mail,
-  Phone,
   Calendar,
   MapPin,
   Trash2,
-  User,
-  BookOpen,
-  CreditCard,
   UserCheck,
   GraduationCap,
   ArrowRight,
@@ -68,6 +63,7 @@ export default function DeputyCenterLeaderApplicantsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [selectedApplication, setSelectedApplication] = useState<Applicant | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -175,6 +171,47 @@ export default function DeputyCenterLeaderApplicantsPage() {
       setSelectedApplication((prev) =>
         prev ? { ...prev, student: null } : prev
       );
+    }
+  };
+
+  const handleStatusChange = async (newStatus: Applicant['status']) => {
+    if (!selectedApplication) return;
+
+    try {
+      setUpdatingStatus(true);
+      const response = await fetch('/api/admin/applicants', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: selectedApplication.id,
+          status: newStatus,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to update status');
+      }
+
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.id === selectedApplication.id ? { ...app, status: newStatus } : app
+        )
+      );
+      setSelectedApplication((prev) =>
+        prev ? { ...prev, status: newStatus } : prev
+      );
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert(
+        err instanceof Error
+          ? err.message
+          : 'Failed to update status. Please try again.'
+      );
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -642,180 +679,223 @@ export default function DeputyCenterLeaderApplicantsPage() {
 
         {/* Detail Modal */}
         {showDetailModal && selectedApplication && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3">
-                  {selectedApplication.avatar ? (
-                    <img
-                      src={selectedApplication.avatar}
-                      alt={`${selectedApplication.firstname} ${selectedApplication.surname}`}
-                      className="h-12 w-12 rounded-full object-cover border border-gray-200 dark:border-gray-700"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                      <ClipboardList className="h-6 w-6 text-green-700 dark:text-green-300" />
-                    </div>
-                  )}
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex items-start justify-between sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                       Application Details
                     </h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Application #{selectedApplication.applicationNumber || 'N/A'}
-                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                    <span className="font-mono">
+                      #{selectedApplication.applicationNumber || 'N/A'}
+                    </span>
+                    <span className="hidden sm:inline text-gray-300 dark:text-gray-600">
+                      •
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      Submitted {formatDate(selectedApplication.createdAt)}
+                    </span>
+                    <span className="hidden sm:inline text-gray-300 dark:text-gray-600">
+                      •
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                        selectedApplication.status
+                      )}`}
+                    >
+                      {selectedApplication.status.replace('_', ' ')}
+                    </span>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowDetailModal(false)}
-                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400"
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  aria-label="Close details"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="p-6 space-y-6">
-                {/* Personal Info */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                    <User className="h-5 w-5 text-green-600" />
+              <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-950">
+                {/* Personal Information */}
+                <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 sm:p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     Personal Information
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Full Name</p>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        {selectedApplication.firstname} {selectedApplication.surname}{' '}
-                        {selectedApplication.middlename || ''}
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Full Name
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
+                        {selectedApplication.firstname} {selectedApplication.surname}
                       </p>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Email</p>
-                      <p className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                        <Mail className="h-4 w-4" />
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Email
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
                         {selectedApplication.email}
                       </p>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Phone</p>
-                      <p className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                        <Phone className="h-4 w-4" />
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Phone
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
                         {selectedApplication.phoneNumber}
                       </p>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Alternate Phone</p>
-                      <p className="text-gray-600 dark:text-gray-400">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Alternate Phone
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
                         {selectedApplication.alternatePhone || 'N/A'}
                       </p>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Date of Birth</p>
-                      <p className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {formatDate(selectedApplication.dateOfBirth)}
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Date of Birth
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
+                        {selectedApplication.dateOfBirth}
                       </p>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Gender</p>
-                      <p className="text-gray-600 dark:text-gray-400">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Gender
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
                         {selectedApplication.gender}
                       </p>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Nationality</p>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        {selectedApplication.nationality}
-                      </p>
-                    </div>
                     <div className="md:col-span-2">
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Address</p>
-                      <p className="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {selectedApplication.address}
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Address
+                      </label>
+                      <p className="text-gray-900 dark:text-white flex items-start gap-1">
+                        <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                        <span>{selectedApplication.address}</span>
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Program Info */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-green-600" />
+                {/* Program Information */}
+                <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 sm:p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     Program Information
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Program Type</p>
-                      <p className="text-gray-600 dark:text-gray-400">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Program Type
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
                         {selectedApplication.programType}
                       </p>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Program Choice</p>
-                      <p className="text-gray-600 dark:text-gray-400">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Program Choice
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
                         {selectedApplication.programChoice}
                       </p>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Session</p>
-                      <p className="text-gray-600 dark:text-gray-400">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Admission Session
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
                         {selectedApplication.admissionSession}
                       </p>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Mode of Study</p>
-                      <p className="text-gray-600 dark:text-gray-400">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Mode of Study
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
                         {selectedApplication.modeOfStudy}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Status & Payment Info */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-green-600" />
-                    Payment Status
+                {/* Payment & Status */}
+                <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 sm:p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Payment & Status
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">Status</p>
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Payment Reference
+                      </label>
+                      <p className="text-gray-900 dark:text-white font-mono">
+                        {selectedApplication.paymentReference || 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Payment Method
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
+                        {selectedApplication.paymentMethod}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 block">
+                        Status
+                      </label>
                       <div className="flex items-center gap-2 mt-1">
+                        <select
+                          value={selectedApplication.status}
+                          onChange={(e) =>
+                            handleStatusChange(e.target.value as Applicant['status'])
+                          }
+                          disabled={updatingStatus}
+                          className="px-3 py-1.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                          <option value="PENDING">Pending</option>
+                          <option value="UNDER_REVIEW">Under Review</option>
+                          <option value="APPROVED">Approved</option>
+                          <option value="REJECTED">Rejected</option>
+                          <option value="AWAITING_PAYMENT">Awaiting Payment</option>
+                        </select>
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
                             selectedApplication.status
                           )}`}
                         >
-                          {selectedApplication.status.replace(/_/g, ' ')}
+                          {selectedApplication.status.replace('_', ' ')}
                         </span>
                       </div>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">
-                        Payment Reference
-                      </p>
-                      <p className="text-gray-600 dark:text-gray-400 break-all">
-                        {selectedApplication.paymentReference || 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">
-                        Payment Method
-                      </p>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        {selectedApplication.paymentMethod || 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">
-                        Applied On
-                      </p>
-                      <p className="text-gray-600 dark:text-gray-400">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Submitted
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
                         {formatDate(selectedApplication.createdAt)}
                       </p>
                     </div>
-                    <div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 sm:p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Acceptance Fee
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
                       <p className="font-medium text-gray-700 dark:text-gray-300">
                         Acceptance Fee
                       </p>
@@ -841,8 +921,6 @@ export default function DeputyCenterLeaderApplicantsPage() {
                       </div>
                     )}
                   </div>
-
-                  {/* Invite for Admission Exercise */}
                   <div className="mt-4">
                     <button
                       type="button"
@@ -865,7 +943,8 @@ export default function DeputyCenterLeaderApplicantsPage() {
                   </div>
                 </div>
 
-                {/* Applicant Status Management */}
+                <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 sm:p-6 shadow-sm">
+                  {/* Applicant Status Management */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                     <UserCheck className="h-5 w-5 text-green-600" />
@@ -992,10 +1071,13 @@ export default function DeputyCenterLeaderApplicantsPage() {
                     </div>
                   </div>
                 </div>
+                </div>
+
               </div>
             </div>
           </div>
         )}
+
 
         {/* Student Info Modal */}
         {showStudentInfoModal && (
