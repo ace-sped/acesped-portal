@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import DeputyCenterLeaderLayout from '../components/DeputyCenterLeaderLayout';
+import ExportApplicationsMenu from '../../components/applicants/ExportApplicationsMenu';
 import {
   ClipboardList,
   Search,
@@ -544,6 +545,7 @@ export default function DeputyCenterLeaderApplicantsPage() {
             </select>
             <Filter className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
+          <ExportApplicationsMenu applications={filteredApplications} />
         </div>
 
         {/* Applications Table */}

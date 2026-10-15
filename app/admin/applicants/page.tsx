@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../components/AdminLayout';
+import ExportApplicationsMenu from '../../components/applicants/ExportApplicationsMenu';
 import {
   ClipboardList,
   Search,
@@ -272,6 +273,7 @@ export default function ApplicantsPage() {
               <option value="AWAITING_PAYMENT">Awaiting Payment</option>
             </select>
           </div>
+          <ExportApplicationsMenu applications={filteredApplications} />
         </div>
 
         {/* Stats */}
