@@ -369,7 +369,27 @@ const locationData: Record<string, Record<string, string[]>> = {
 
 const PAYMENT_STORAGE_KEY = 'acePaymentRecord';
 const PAYMENT_WAIVED_EMAILS = ['pmelvils89@gmail.com'];
-const ACCEPTED_PAYMENT_REFERENCES = ['T184398562616414'];
+
+const FORCED_PAYMENT_REFERENCE = 'T184398562616414';
+
+function clearForcedPaymentState<T extends { paymentReference?: string; paymentMethod?: string }>(
+  form: T,
+  paymentCompleted: boolean,
+  keepReference = false
+): { form: T; paymentCompleted: boolean } {
+  if (keepReference || (form.paymentReference || '').trim() !== FORCED_PAYMENT_REFERENCE) {
+    return { form, paymentCompleted };
+  }
+
+  return {
+    form: {
+      ...form,
+      paymentReference: '',
+      paymentMethod: 'Paystack',
+    },
+    paymentCompleted: false,
+  };
+}
 const APPLICATION_DRAFT_KEY = 'aceApplicationDraft';
 const APPLICATION_DATA_KEY = 'aceApplicationData';
 const APPLICATION_STEP_KEY = 'aceApplicationStep';
@@ -825,11 +845,7 @@ export default function ApplicationPage() {
   const paymentWaived = PAYMENT_WAIVED_EMAILS.includes(
     formData.email.trim().toLowerCase()
   );
-  const paymentReferenceAccepted = ACCEPTED_PAYMENT_REFERENCES.includes(
-    formData.paymentReference.trim()
-  );
-  const canSubmitApplication =
-    paymentCompleted || paymentWaived || paymentReferenceAccepted;
+  const canSubmitApplication = paymentCompleted || paymentWaived;
 
   const currentStepMissingFields = getMissingRequiredFields(currentStep);
 
@@ -1177,18 +1193,19 @@ export default function ApplicationPage() {
             // ignore
           }
         }
-        setFormData((prev) => ({ ...prev, ...nextForm }));
-        syncLocationOptions(nextForm);
-        if (nextForm.avatar) setAvatarPreview(nextForm.avatar);
+        const restoredPayment = clearForcedPaymentState(nextForm, false);
+        setFormData((prev) => ({ ...prev, ...restoredPayment.form }));
+        syncLocationOptions(restoredPayment.form);
+        if (restoredPayment.form.avatar) setAvatarPreview(restoredPayment.form.avatar);
         setAcceptedRequirements(Boolean(saved.acceptedRequirements));
-        setPaymentCompleted(Boolean(saved.paymentCompleted));
+        setPaymentCompleted(restoredPayment.paymentCompleted);
         setCurrentStep(nextStep);
         persistApplicationDraft({
-          formData: nextForm,
+          formData: restoredPayment.form,
           currentStep: nextStep,
           acceptedRequirements: Boolean(saved.acceptedRequirements),
-          paymentCompleted: Boolean(saved.paymentCompleted),
-          avatarPreview: nextForm.avatar || '',
+          paymentCompleted: restoredPayment.paymentCompleted,
+          avatarPreview: restoredPayment.form.avatar || '',
         });
       } catch (error: any) {
         if (controller.signal.aborted) return;
@@ -2477,7 +2494,7 @@ export default function ApplicationPage() {
             {renderReviewSection('Payment', 'payment', [
               ['Payment method', formData.paymentMethod],
               ['Payment reference', formData.paymentReference],
-              ['Payment status', paymentCompleted || paymentWaived || paymentReferenceAccepted ? 'Completed' : 'Not completed'],
+              ['Payment status', paymentCompleted || paymentWaived ? 'Completed' : 'Not completed'],
             ])}
           </div>
         );
@@ -2606,7 +2623,6 @@ export default function ApplicationPage() {
     let restoredForm: ApplicationData | null = null;
     let restoredStep: ApplicationStep | null = null;
     let restoredAccepted = false;
-    let restoredPaymentCompleted = false;
     let restoredAvatar = '';
 
     if (draftRaw) {
@@ -2615,7 +2631,6 @@ export default function ApplicationPage() {
         restoredForm = draft.formData || null;
         restoredStep = draft.currentStep || null;
         restoredAccepted = Boolean(draft.acceptedRequirements);
-        restoredPaymentCompleted = Boolean(draft.paymentCompleted);
         restoredAvatar = draft.avatarPreview || draft.formData?.avatar || '';
       } catch (error) {
         console.error('Error parsing application draft:', error);
@@ -2647,18 +2662,19 @@ export default function ApplicationPage() {
 
             const nextForm = saved.formData as ApplicationData;
             const nextStep = (saved.currentStep as ApplicationStep) || 'requirements';
-            setFormData((prev) => ({ ...prev, ...nextForm }));
-            syncLocationOptions(nextForm);
-            if (nextForm.avatar) setAvatarPreview(nextForm.avatar);
+            const restoredPayment = clearForcedPaymentState(nextForm, false);
+            setFormData((prev) => ({ ...prev, ...restoredPayment.form }));
+            syncLocationOptions(restoredPayment.form);
+            if (restoredPayment.form.avatar) setAvatarPreview(restoredPayment.form.avatar);
             setAcceptedRequirements(Boolean(saved.acceptedRequirements));
-            setPaymentCompleted(Boolean(saved.paymentCompleted));
+            setPaymentCompleted(restoredPayment.paymentCompleted);
             setCurrentStep(nextStep);
             persistApplicationDraft({
-              formData: nextForm,
+              formData: restoredPayment.form,
               currentStep: nextStep,
               acceptedRequirements: Boolean(saved.acceptedRequirements),
-              paymentCompleted: Boolean(saved.paymentCompleted),
-              avatarPreview: nextForm.avatar || '',
+              paymentCompleted: restoredPayment.paymentCompleted,
+              avatarPreview: restoredPayment.form.avatar || '',
             });
           })
           .catch((error) => {
@@ -2669,25 +2685,23 @@ export default function ApplicationPage() {
     }
 
     const resolvedPaymentReference =
-      paymentRef ||
-      restoredForm?.paymentReference?.trim() ||
-      ACCEPTED_PAYMENT_REFERENCES[0];
+      paymentRef || restoredForm?.paymentReference?.trim() || '';
 
-    if (restoredForm || returnedFromPayment || resolvedPaymentReference) {
+    if (restoredForm || returnedFromPayment) {
       const baseForm = restoredForm || ({} as ApplicationData);
-      const nextForm = {
-        ...baseForm,
-        paymentReference: resolvedPaymentReference,
-        paymentMethod: 'Paystack',
-      };
+      const restoredPayment = clearForcedPaymentState(
+        {
+          ...baseForm,
+          paymentReference: resolvedPaymentReference || baseForm.paymentReference || '',
+          paymentMethod: resolvedPaymentReference ? 'Paystack' : baseForm.paymentMethod,
+        },
+        returnedFromPayment,
+        returnedFromPayment
+      );
+      const nextForm = restoredPayment.form;
       const nextStep: ApplicationStep = returnedFromPayment
         ? 'payment'
         : restoredStep || 'requirements';
-      const nextPaymentCompleted = ACCEPTED_PAYMENT_REFERENCES.includes(
-        resolvedPaymentReference
-      )
-        ? true
-        : returnedFromPayment || restoredPaymentCompleted;
 
       setFormData((prev) => ({ ...prev, ...nextForm }));
       if (restoredForm) {
@@ -2697,14 +2711,14 @@ export default function ApplicationPage() {
         setAvatarPreview(restoredAvatar || nextForm.avatar || '');
       }
       setAcceptedRequirements(restoredAccepted);
-      setPaymentCompleted(nextPaymentCompleted);
+      setPaymentCompleted(restoredPayment.paymentCompleted);
       setCurrentStep(nextStep);
 
       persistApplicationDraft({
         formData: { ...nextForm } as ApplicationData,
         currentStep: nextStep,
         acceptedRequirements: restoredAccepted,
-        paymentCompleted: nextPaymentCompleted,
+        paymentCompleted: restoredPayment.paymentCompleted,
         avatarPreview: restoredAvatar || nextForm.avatar || '',
       });
 
@@ -2717,6 +2731,7 @@ export default function ApplicationPage() {
               reference: paymentRef,
               email: nextForm.email || '',
               timestamp: new Date().toISOString(),
+              confirmed: true,
             })
           );
         } catch (storageError) {
@@ -2734,16 +2749,9 @@ export default function ApplicationPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Toggle payment completion based on reference value
+  // A saved reference is only a completed payment after Paystack redirects back.
   useEffect(() => {
-    const reference = formData.paymentReference.trim();
-    if (ACCEPTED_PAYMENT_REFERENCES.includes(reference)) {
-      setPaymentCompleted(true);
-      return;
-    }
-    if (reference !== '') {
-      setPaymentCompleted(true);
-    } else {
+    if (formData.paymentReference.trim() === '') {
       setPaymentCompleted(false);
     }
   }, [formData.paymentReference]);
@@ -2763,7 +2771,7 @@ export default function ApplicationPage() {
       const normalizedEmail = formData.email.trim().toLowerCase();
       const savedEmail = String(savedRecord.email).trim().toLowerCase();
 
-      if (normalizedEmail === savedEmail) {
+      if (normalizedEmail === savedEmail && savedRecord.confirmed === true) {
         if (formData.paymentReference !== savedRecord.reference) {
           setFormData(prev => ({
             ...prev,
@@ -2783,6 +2791,7 @@ export default function ApplicationPage() {
   // Persist payment reference with associated email for future restores
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (!paymentCompleted) return;
     if (!formData.paymentReference || formData.paymentReference.trim() === '') return;
 
     try {
@@ -2793,12 +2802,13 @@ export default function ApplicationPage() {
           email: formData.email || '',
           timestamp: new Date().toISOString(),
           programChoice: formData.programChoice || '',
+          confirmed: true,
         })
       );
     } catch (error) {
       console.error('Error saving payment record:', error);
     }
-  }, [formData.paymentReference, formData.email, formData.programChoice]);
+  }, [paymentCompleted, formData.paymentReference, formData.email, formData.programChoice]);
 
   const alertVariantStyles = {
     info: {
