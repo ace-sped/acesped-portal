@@ -31,6 +31,7 @@ const getLevelDisplayName = (level: string) => {
     'MASTERS': 'Masters',
     'PHD': 'Ph.D',
     'MASTERS_AND_PHD': 'Ph.D/M.Sc.',
+    'PGD': 'Postgraduate Diploma',
   };
   return levelMap[level] || level.replace(/_/g, ' ');
 };
@@ -264,16 +265,16 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
       {/* Breadcrumb */}
       <section className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4">
         <div className="page-shell">
-          <nav className="flex items-center space-x-2 text-sm">
+          <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
             {breadcrumbItems.map((item, index) => (
               <React.Fragment key={index}>
-                {index > 0 && <ChevronRight className="h-4 w-4 text-gray-400" />}
+                {index > 0 && <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />}
                 {index === breadcrumbItems.length - 1 ? (
-                  <span className="text-gray-900 dark:text-white font-medium">{item.label}</span>
+                  <span className="text-gray-900 dark:text-white font-medium break-words">{item.label}</span>
                 ) : (
                   <Link
                     href={item.href}
-                    className="text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                    className="text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors break-words"
                   >
                     {item.label}
                   </Link>
@@ -285,8 +286,8 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
       </section>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
-        <div className="page-shell w-full">
+      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white">
+        <div className="page-shell w-full pt-10 pb-16 sm:pt-14 sm:pb-20">
           <div className="max-w-4xl mx-auto text-center">
             {/* Level Badge */}
             {program.level && (
@@ -296,13 +297,13 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
             )}
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-50 mb-4 sm:mb-6 break-words">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-50 mb-4 sm:mb-6 break-words text-balance">
               {program.title}
             </h1>
 
             {/* Description */}
             {program.overview && (
-              <p className="text-base sm:text-lg md:text-xl text-gray-100/90 mb-4 sm:mb-6 leading-relaxed max-w-3xl mx-auto">
+              <p className="text-base sm:text-lg md:text-xl text-gray-100/90 mb-4 sm:mb-6 leading-relaxed max-w-3xl mx-auto break-words">
                 {program.overview}
               </p>
             )}
@@ -316,7 +317,7 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
       </section>
 
       {/* Quick Info Cards */}
-      <section className="py-0 -mt-4 sm:-mt-6 relative z-10">
+      <section className="py-0 -mt-8 relative z-10">
         <div className="page-shell">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-xl border border-gray-200 dark:border-gray-700 flex flex-col h-full">
