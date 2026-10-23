@@ -81,14 +81,7 @@ export default function SnrdbPage() {
 
           <div className="page-shell relative z-10 flex h-full min-h-0 flex-col py-4 sm:py-6 lg:py-8">
             <div className="grid min-h-0 h-full items-center gap-5 lg:grid-cols-[1fr_1fr] lg:items-stretch lg:gap-6">
-              <div className="snrdb-rise flex min-h-0 flex-col justify-center">
-                <p
-                  className="mb-2 text-xs font-semibold uppercase tracking-[0.28em] text-(--snrdb-leaf) sm:text-sm"
-                  style={{ fontFamily: 'var(--font-snrdb-display), sans-serif' }}
-                >
-                  SNRDB · ACE-SPED × ATDIN
-                </p>
-
+              <div className="snrdb-rise flex min-h-0 flex-col justify-center">               
                 <h1
                   className="text-[clamp(2.1rem,6.5vw,4.5rem)] leading-[0.92] font-extrabold tracking-tight text-(--snrdb-forest)"
                   style={{ fontFamily: 'var(--font-snrdb-display), sans-serif' }}
@@ -275,6 +268,7 @@ export default function SnrdbPage() {
               name="Professor Emenike Ejiogu"
               role="Director, Africa Centre of Excellence for Sustainable Power and Energy Development (ACE-SPED), UNN"
               email="emenike.ejiogu@unn.edu.ng"
+              phone="+234 807 580 3342"
             />
 
             <div className="hidden items-center justify-center md:flex">
@@ -300,6 +294,7 @@ export default function SnrdbPage() {
               name="Professor Pat Uche Okpoko"
               role="President, Association for Tourism Development in Nigeria (ATDIN), UNN"
               email="patrick.okpoko@unn.edu.ng"
+              phone="+234 806 935 9951"
             />
           </div>
         </div>
@@ -331,10 +326,12 @@ function Organiser({
   name,
   role,
   email,
+  phone,
 }: {
   name: string;
   role: string;
   email: string;
+  phone: string;
 }) {
   return (
     <div>
@@ -352,6 +349,12 @@ function Organiser({
         <Mail className="h-4 w-4" />
         {email}
       </a>
+      <p
+        className="text-2xl max-w-md leading-relaxed text-white/80"
+        style={{ fontFamily: 'var(--font-snrdb-display), sans-serif' }}
+      >
+        Phone: {phone}
+      </p>
     </div>
   );
 }
