@@ -88,13 +88,11 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
         <Navbar />
         
         {/* Hero Section Skeleton */}
-        <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4">
-          <div className="page-shell w-full">
-            <div className="flex flex-col items-center justify-center min-h-[40vh]">
-              <Loader2 className="h-12 w-12 text-white animate-spin mb-4" />
-              <p className="text-white/90 text-lg mb-2">Loading service...</p>
-              <p className="text-white/70 text-sm">Please wait while we fetch the service details</p>
-            </div>
+        <section className="relative box-border flex h-[100vh] min-h-[100vh] items-center justify-center bg-gradient-to-br from-green-900 to-emerald-900 py-12 text-white sm:py-16">
+          <div className="page-shell flex w-full flex-col items-center justify-center text-center">
+            <Loader2 className="h-12 w-12 text-white animate-spin mb-4" />
+            <p className="text-white/90 text-lg mb-2">Loading service...</p>
+            <p className="text-white/70 text-sm">Please wait while we fetch the service details</p>
           </div>
         </section>
 
@@ -232,17 +230,19 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white h-[40vh] min-h-[40vh] flex flex-col justify-center items-center py-4 overflow-y-auto">
-        <div className="page-shell w-full">
+      <section className="relative box-border flex h-[100vh] min-h-[100vh] items-center justify-center bg-gradient-to-br from-green-900 to-emerald-900 py-12 text-white sm:py-16">
+        <div className="page-shell absolute inset-x-0 top-0 pt-6 sm:pt-8">
+          <button
+            type="button"
+            onClick={() => router.push('/services')}
+            className="inline-flex items-center text-white/80 hover:text-white transition-colors text-sm sm:text-base"
+          >
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+            <span className="whitespace-nowrap">Back to Services</span>
+          </button>
+        </div>
+        <div className="page-shell flex w-full flex-col items-center justify-center">
           <div className="max-w-4xl mx-auto text-center">
-            <button
-              type="button"
-              onClick={() => router.push('/services')}
-              className="inline-flex items-center text-white/80 hover:text-white mb-6 sm:mb-8 transition-colors text-sm sm:text-base"
-            >
-              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
-              <span className="whitespace-nowrap">Back to Services</span>
-            </button>
             <div className="flex justify-center mb-4 sm:mb-6">
               <div className={`inline-flex p-3 sm:p-4 bg-gradient-to-br ${color} rounded-xl flex-shrink-0`}>
                 <Icon className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-white" />
@@ -254,10 +254,15 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
             )}
             <p className="text-sm sm:text-base lg:text-lg text-white/90 mb-6 sm:mb-8 lg:mb-10 break-words leading-relaxed max-w-3xl mx-auto">{service.description}</p>
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 items-stretch sm:items-center justify-center">
-              <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-sm rounded-xl font-semibold flex items-center justify-center flex-shrink-0 w-full sm:w-auto">
-                <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mr-2 sm:mr-3 whitespace-nowrap">{service.programs?.length || service.totalCourses || 0}</span>
-                <span className="text-xs sm:text-sm lg:text-base text-white/90 whitespace-nowrap">Programs Available</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  document.getElementById('available-programs')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 bg-white text-green-800 rounded-xl font-semibold text-xs sm:text-sm lg:text-base hover:bg-green-50 transition-all whitespace-nowrap flex-shrink-0 w-full sm:w-auto text-center"
+              >
+                Explore {service.programs?.length || service.totalCourses || 0} programs
+              </button>
               <button type="button" className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold text-xs sm:text-sm lg:text-base hover:bg-white hover:text-green-800 transition-all whitespace-nowrap flex-shrink-0 w-full sm:w-auto text-center">
                 Download Brochure
               </button>
@@ -289,7 +294,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
 
       {/* Available Programs Section */}
       {((service.programs && service.programs.length > 0) || (service.courses && service.courses.length > 0)) && (
-        <section className={`py-12 sm:py-16 lg:py-20 ${thematicAreas.length > 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'}`}>
+        <section id="available-programs" className={`py-12 sm:py-16 lg:py-20 ${thematicAreas.length > 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'}`}>
           <div className="page-shell">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-6 sm:mb-8 lg:mb-10">
               Available Programs
@@ -334,7 +339,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
       )}
 
       {(!service.programs || service.programs.length === 0) && (!service.courses || service.courses.length === 0) && (
-        <section className="py-16 sm:py-20 lg:py-24 bg-white dark:bg-gray-900">
+        <section id="available-programs" className="py-16 sm:py-20 lg:py-24 bg-white dark:bg-gray-900">
           <div className="page-shell text-center">
             <div className="max-w-2xl mx-auto">
               <FileText className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />

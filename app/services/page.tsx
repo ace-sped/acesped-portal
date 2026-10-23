@@ -141,7 +141,7 @@ export default function ServicesPage() {
                 <p className="text-gray-500 dark:text-gray-500 text-xs mt-1.5">Please wait while we fetch the latest services</p>
               </div>
               {/* Skeleton loaders */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 mt-8">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700 animate-pulse">
                     <div className="flex items-center mb-4">
@@ -223,7 +223,7 @@ export default function ServicesPage() {
               <p className="text-gray-600 dark:text-gray-400">No services available at the moment.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
               {services.map((service) => {
                 const Icon = getIconComponent(service.icon);
                 const color = service.color || 'from-green-500 to-emerald-500';

@@ -1,11 +1,11 @@
 
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import DeputyCenterLeaderLayout from '../components/DeputyCenterLeaderLayout';
 import {
     Search, GraduationCap, ChevronLeft, ChevronRight, Loader2,
-    Eye, EyeOff, FileText, MoreVertical, Trash2, Filter, Edit
+    Eye, EyeOff, FileText, MoreVertical, Trash2, Filter, Edit, Upload
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -49,6 +49,9 @@ export default function DeputyCenterLeaderStudentsPage() {
     });
     const [showEditModal, setShowEditModal] = useState(false);
     const [savingEdit, setSavingEdit] = useState(false);
+    const [uploadingCsv, setUploadingCsv] = useState(false);
+    const [uploadMessage, setUploadMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const csvInputRef = useRef<HTMLInputElement>(null);
     const [showEditPassword, setShowEditPassword] = useState(false);
     const [editForm, setEditForm] = useState<EditStudentForm>({
         id: '',
@@ -179,17 +182,86 @@ export default function DeputyCenterLeaderStudentsPage() {
         }
     };
 
+    const handleCsvUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setUploadingCsv(true);
+        setUploadMessage(null);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await fetch('/api/deputy-center-leader/students/upload', {
+                method: 'POST',
+                body: formData,
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                setUploadMessage({ type: 'error', text: data.message || 'Failed to upload CSV' });
+                return;
+            }
+
+            const detail = Array.isArray(data.errors) && data.errors.length > 0
+                ? ` ${data.errors[0]}`
+                : '';
+            setUploadMessage({ type: 'success', text: `${data.message}${detail}` });
+            setPagination((prev) => ({ ...prev, page: 1 }));
+            await fetchStudents();
+        } catch (error) {
+            console.error('Error uploading students CSV:', error);
+            setUploadMessage({ type: 'error', text: 'Failed to upload CSV' });
+        } finally {
+            setUploadingCsv(false);
+            if (csvInputRef.current) csvInputRef.current.value = '';
+        }
+    };
+
     return (
         <DeputyCenterLeaderLayout>
             <div className="p-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                        Students
-                    </h1>
-                    <p className="text-gray-600 dark:text-gray-400">
-                        View and manage enrolled students
-                    </p>
+                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                            Students
+                        </h1>
+                        <p className="text-gray-600 dark:text-gray-400">
+                            View and manage enrolled students
+                        </p>
+                    </div>
+                    <div>
+                        <input
+                            ref={csvInputRef}
+                            type="file"
+                            accept=".csv,text/csv"
+                            className="hidden"
+                            onChange={handleCsvUpload}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => csvInputRef.current?.click()}
+                            disabled={uploadingCsv}
+                            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                        >
+                            {uploadingCsv ? (
+                                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                            ) : (
+                                <Upload className="h-5 w-5 mr-2" />
+                            )}
+                            Upload CSV
+                        </button>
+                    </div>
                 </div>
+
+                {uploadMessage && (
+                    <div className={`mb-6 p-4 rounded-lg ${uploadMessage.type === 'success'
+                        ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                        : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'
+                        }`}>
+                        {uploadMessage.text}
+                    </div>
+                )}
 
                 {/* Search and Filter */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
