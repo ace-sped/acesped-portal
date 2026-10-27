@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import DeputyCenterLeaderLayout from '../components/DeputyCenterLeaderLayout';
 import {
     Search, GraduationCap, ChevronLeft, ChevronRight, Loader2,
-    Eye, EyeOff, FileText, MoreVertical, Trash2, Filter, Edit, Upload
+    Eye, EyeOff, FileText, MoreVertical, Trash2, Filter, Edit, Upload, Download
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -182,6 +182,65 @@ export default function DeputyCenterLeaderStudentsPage() {
         }
     };
 
+    const handleExportCsvTemplate = () => {
+        const headers = [
+            'Surname',
+            'First Name',
+            'Email',
+            'Matric Number',
+            'Registration Number',
+            'Phone',
+            'Gender',
+            'Program',
+            'Admission Session',
+            'Mode of Study',
+            'Status',
+            'Password',
+            'Date of Birth',
+            'Nationality',
+            'Address',
+            'Home Address',
+            'Home Town',
+            'City',
+            'State',
+            'Country',
+            'Religion',
+        ];
+        const example = [
+            'Doe',
+            'Jane',
+            'jane.doe@example.com',
+            'ACE/2026/0001',
+            'REG/2026/0001',
+            '+2348000000000',
+            'Female',
+            'PGD in Management of Technology (MOTI)',
+            '2026/2027',
+            'Full-time',
+            'ACTIVE',
+            '',
+            '1998-01-15',
+            'Nigeria',
+            'Nsukka',
+            'Nsukka',
+            'Nsukka',
+            'Nsukka',
+            'Enugu',
+            'Nigeria',
+            'Christianity',
+        ];
+        const csv = [headers, example]
+            .map((row) => row.map((value) => `"${value.replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'students-upload-template.csv';
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     const handleCsvUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -230,7 +289,15 @@ export default function DeputyCenterLeaderStudentsPage() {
                             View and manage enrolled students
                         </p>
                     </div>
-                    <div>
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            type="button"
+                            onClick={handleExportCsvTemplate}
+                            className="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        >
+                            <Download className="h-5 w-5 mr-2" />
+                            Export CSV template
+                        </button>
                         <input
                             ref={csvInputRef}
                             type="file"
