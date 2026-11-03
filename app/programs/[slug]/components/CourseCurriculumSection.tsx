@@ -17,8 +17,10 @@ interface CourseCurriculumSectionProps {
 }
 
 export default function CourseCurriculumSection({ courses, programSlug }: CourseCurriculumSectionProps) {
-    const isAmtProgram = programSlug === 'additive-manufacturing-3-d-printing-technology-amt';
-    const [activeLevel, setActiveLevel] = useState<'MSc' | 'PhD' | 'PGD'>(isAmtProgram ? 'PGD' : 'MSc');
+    const isPgdOnlyProgram =
+        programSlug === 'additive-manufacturing-3-d-printing-technology-amt' ||
+        programSlug === 'pgd-in-power-electronics-and-control-systems-engineering-pgdpecse';
+    const [activeLevel, setActiveLevel] = useState<'MSc' | 'PhD' | 'PGD'>(isPgdOnlyProgram ? 'PGD' : 'MSc');
     const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
 
     // Filter courses based on active level
@@ -116,7 +118,7 @@ export default function CourseCurriculumSection({ courses, programSlug }: Course
 
                 {/* Level Filter Buttons */}
                 <div className="flex justify-center mb-10 gap-4">
-                    {isAmtProgram ? (
+                    {isPgdOnlyProgram ? (
                         <button
                             onClick={() => setActiveLevel('PGD')}
                             className={`px-6 py-2 rounded-full font-medium transition-all ${activeLevel === 'PGD'
