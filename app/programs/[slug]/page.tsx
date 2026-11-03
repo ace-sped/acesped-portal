@@ -16,6 +16,7 @@ import {
   Briefcase,
   Award,
   Users,
+  Download,
 } from 'lucide-react';
 import { TbCurrencyNaira } from 'react-icons/tb';
 import Navbar from '@/app/components/navbar/page';
@@ -289,29 +290,38 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
       <section className="relative bg-gradient-to-br from-green-900 to-emerald-900 text-white">
         <div className="page-shell w-full pt-10 pb-16 sm:pt-14 sm:pb-20">
           <div className="max-w-4xl mx-auto text-center">
-            {/* Level Badge */}
-            {program.level && (
-              <span className="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm text-green-100 rounded-full text-sm font-semibold mb-4">
-                {getLevelDisplayName(program.level)}
-              </span>
-            )}
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+              {program.level && (
+                <span className="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm text-green-100 rounded-full text-sm font-semibold">
+                  {getLevelDisplayName(program.level)}
+                </span>
+              )}
+              {program.courseCode && (
+                <span className="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm text-green-100 rounded-full text-sm font-semibold">
+                  {program.courseCode}
+                </span>
+              )}
+            </div>
 
-            {/* Title */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-50 mb-4 sm:mb-6 break-words text-balance">
               {program.title}
             </h1>
 
-            {/* Description */}
-            {program.overview && (
-              <p className="text-base sm:text-lg md:text-xl text-gray-100/90 mb-4 sm:mb-6 leading-relaxed max-w-3xl mx-auto break-words">
-                {program.overview}
-              </p>
-            )}
-
-            {/* Sub text */}
-            <p className="text-xs sm:text-sm text-green-100/80">
+            <p className="text-xs sm:text-sm text-green-100/80 mb-6">
               Designed to equip you with practical, job-ready skills for today&apos;s digital economy.
             </p>
+
+            {program.brochure && (
+              <a
+                href={program.brochure}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-5 py-3 bg-white text-green-800 rounded-xl font-semibold text-sm sm:text-base hover:bg-green-50 transition-colors"
+              >
+                <Download className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                Download Brochure
+              </a>
+            )}
           </div>
         </div>
       </section>
@@ -387,12 +397,172 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
         </div>
       </section>
 
+      {/* Program Overview */}
+      {program.overview && (
+        <section className="pt-12 sm:pt-16 lg:pt-20 pb-12 sm:pb-16 lg:pb-20 bg-white dark:bg-gray-900">
+          <div className="page-shell">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8 sm:mb-10">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
+                  Program Overview
+                </h2>
+                <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400">
+                  What this programme covers and who it is for
+                </p>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
+                <p className="text-sm sm:text-base lg:text-lg text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line break-words">
+                  {program.overview}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
+      {/* Learning Objectives */}
+      {objectives.length > 0 && (
+        <section className={`py-12 sm:py-16 lg:py-20 ${program.overview ? 'bg-gray-50 dark:bg-gray-950' : 'bg-white dark:bg-gray-900'}`}>
+          <div className="page-shell">
+            <div className="text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                What You&apos;ll Learn
+              </h2>
+              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Programme objectives designed to build practical and industry-ready expertise
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-5xl mx-auto">
+              {objectives.map((objective: string, index: number) => (
+                <div
+                  key={index}
+                  className="flex items-start bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 sm:p-6 border border-green-100 dark:border-green-800"
+                >
+                  <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0 font-bold text-sm">
+                    {index + 1}
+                  </div>
+                  <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed break-words">
+                    {objective}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Curriculum from program JSON when no linked courses */}
+      {curriculum.length > 0 && (
+        <section
+          className={`py-12 sm:py-16 lg:py-20 ${
+            objectives.length > 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-950'
+          }`}
+        >
+          <div className="page-shell">
+            <div className="text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                Programme Curriculum
+              </h2>
+              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400">
+                Modules and topics covered in this programme
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 max-w-5xl mx-auto">
+              {curriculum.map((module: string, index: number) => (
+                <div
+                  key={index}
+                  className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 flex items-center hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
+                >
+                  <div className="bg-gradient-to-br from-green-600 to-emerald-600 text-white rounded-lg w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0 font-bold text-sm sm:text-lg">
+                    {index + 1}
+                  </div>
+                  <p className="text-sm sm:text-base text-gray-900 dark:text-white font-medium break-words">
+                    {module}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Course Curriculum Section */}
       <CourseCurriculumSection courses={program.courses || []} programSlug={slug} />
 
+      {/* Requirements & Career Paths */}
+      {(requirements.length > 0 || careerPaths.length > 0) && (
+        <section className="py-12 sm:py-16 lg:py-20 bg-white dark:bg-gray-900">
+          <div className="page-shell">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 xl:gap-16">
+              {requirements.length > 0 && (
+                <div className="flex flex-col">
+                  <div className="mb-6 sm:mb-8">
+                    <div className="flex items-center mb-3 sm:mb-4">
+                      <div className="bg-blue-100 dark:bg-blue-900 p-2 sm:p-3 rounded-lg mr-2 sm:mr-3 flex-shrink-0">
+                        <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
+                        Entry Requirements
+                      </h2>
+                    </div>
+                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
+                      Prerequisites to enrol in this programme
+                    </p>
+                  </div>
+                  <div className="space-y-3 sm:space-y-4 flex-1">
+                    {requirements.map((req: string, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-start bg-gray-50 dark:bg-gray-800 rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700"
+                      >
+                        <div className="bg-green-100 dark:bg-green-900 rounded-full p-1 mr-3 sm:mr-4 flex-shrink-0 mt-0.5">
+                          <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed break-words flex-1">
+                          {req}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
+              {careerPaths.length > 0 && (
+                <div className="flex flex-col">
+                  <div className="mb-6 sm:mb-8">
+                    <div className="flex items-center mb-3 sm:mb-4">
+                      <div className="bg-purple-100 dark:bg-purple-900 p-2 sm:p-3 rounded-lg mr-2 sm:mr-3 flex-shrink-0">
+                        <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white break-words">
+                        Career Opportunities
+                      </h2>
+                    </div>
+                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
+                      Potential career paths after completing this programme
+                    </p>
+                  </div>
+                  <div className="space-y-2 sm:space-y-3 flex-1">
+                    {careerPaths.map((career: string, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-center bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 sm:p-5 border border-green-100 dark:border-green-800"
+                      >
+                        <div className="bg-green-600 text-white rounded-lg p-1.5 sm:p-2 mr-3 sm:mr-4 flex-shrink-0">
+                          <Award className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </div>
+                        <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-semibold break-words flex-1">
+                          {career}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Ready to Start Your Journey CTA */}
       <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-green-900 to-emerald-900">
@@ -506,6 +676,17 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
                   </button>
                 );
               })()}
+              {program.brochure && (
+                <a
+                  href={program.brochure}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-white border-2 border-green-600 text-green-700 dark:bg-gray-800 dark:border-green-500 dark:text-green-300 rounded-xl font-semibold text-base sm:text-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all flex items-center justify-center"
+                >
+                  <Download className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+                  Download Brochure
+                </a>
+              )}
               {program.service && (
                 <button
                   onClick={() => router.push(`/services/${program.service.slug}`)}
