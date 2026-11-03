@@ -1,19 +1,14 @@
-import { Barlow_Condensed, Lora } from 'next/font/google';
+// Loaded with a stylesheet link. next/font/google fails under Turbopack production
+// builds when gstatic kit URLs contain unencoded "&" query separators.
 
-export const snrdbDisplay = Barlow_Condensed({
-  subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
-  variable: '--font-snrdb-display',
-});
+export const snrdbDisplay = {
+  variable: 'snrdb-display-font',
+};
 
-// Loaded with a stylesheet link. next/font cannot fetch Source Sans 3 during a Turbopack production build.
 export const snrdbBody = {
   variable: 'snrdb-body-font',
 };
 
-export const snrdbSerif = Lora({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  style: ['normal', 'italic'],
-  variable: '--font-snrdb-serif',
-});
+export const snrdbSerif = {
+  variable: 'snrdb-serif-font',
+};

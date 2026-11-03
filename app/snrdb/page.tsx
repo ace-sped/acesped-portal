@@ -41,11 +41,17 @@ export default function SnrdbPage() {
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Source+Sans+3:wght@400;500;600;700&display=swap"
       />
       <style>{`
+        .snrdb-display-font {
+          --font-snrdb-display: 'Barlow Condensed', system-ui, sans-serif;
+        }
         .snrdb-body-font {
           --font-snrdb-body: 'Source Sans 3', system-ui, sans-serif;
+        }
+        .snrdb-serif-font {
+          --font-snrdb-serif: Lora, Georgia, serif;
         }
         @keyframes snrdb-rise {
           from { opacity: 0; transform: translateY(1.25rem); }

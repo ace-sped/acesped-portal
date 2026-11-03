@@ -249,7 +249,7 @@ export async function GET(request: NextRequest) {
     headers.set('Content-Length', String(selected.buffer.length));
     headers.set('Cache-Control', 'public, max-age=3600');
 
-    return new NextResponse(selected.buffer, {
+    return new NextResponse(new Uint8Array(selected.buffer), {
       status: 200,
       headers,
     });
