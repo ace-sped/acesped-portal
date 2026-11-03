@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import cloudinary from '@/lib/cloudinary';
 
 const ALLOWED_HOSTS = [
   'res.cloudinary.com',
@@ -8,6 +9,7 @@ const ALLOWED_HOSTS = [
   'res-3.cloudinary.com',
   'res-4.cloudinary.com',
   'res-5.cloudinary.com',
+  'api.cloudinary.com',
 ];
 
 function isAllowedUrl(urlString: string): boolean {
@@ -27,27 +29,73 @@ function resolveUrl(urlParam: string): string {
   if (decoded.startsWith('http://') || decoded.startsWith('https://')) {
     return decoded;
   }
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME || cloudinary.config().cloud_name;
   if (!cloudName) return urlParam;
   const path = decoded.startsWith('/') ? decoded.slice(1) : decoded;
   return `https://res.cloudinary.com/${cloudName}/raw/upload/${path}`;
 }
 
-/** PDFs under image/upload often return 502; request via raw/upload instead. */
-function toRawPdfUrl(url: string): string {
+/** Strip delivery transforms so Cloudinary returns the original file, not an image preview. */
+function stripCloudinaryTransforms(url: string): string {
   try {
     const u = new URL(url);
-    if (u.pathname.includes('/image/upload/') && u.pathname.toLowerCase().endsWith('.pdf')) {
-      u.pathname = u.pathname.replace(/\/image\/upload\//, '/raw/upload/');
-      return u.toString();
-    }
-    return url;
+    u.pathname = u.pathname.replace(/\/upload\/(?:[^/]+\/)*?(v\d+\/)/, '/upload/$1');
+    u.pathname = u.pathname.replace(
+      /\/upload\/(?:(?:f_|q_|fl_|w_|h_|c_|dpr_|e_|s--)[^/,]+,?)+\/(?!v\d+)/,
+      '/upload/'
+    );
+    return u.toString();
   } catch {
     return url;
   }
 }
 
-/** Build signed authenticated URL for 401 fallback. Tries both image and raw resource types. */
+function getFilenameFromUrl(url: string, fallback = 'brochure.pdf'): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const last = pathname.split('/').pop() || fallback;
+    return decodeURIComponent(last.split('?')[0] || fallback);
+  } catch {
+    return fallback;
+  }
+}
+
+/** Extract Cloudinary public_id + resource type from a delivery URL. */
+function parseCloudinaryAsset(url: string): {
+  publicId: string;
+  resourceType: 'image' | 'raw' | 'video';
+  format?: string;
+} | null {
+  try {
+    const u = new URL(stripCloudinaryTransforms(url));
+    const parts = u.pathname.split('/').filter(Boolean);
+    // [cloud, resourceType, 'upload', ...publicIdParts]
+    if (parts.length < 4) return null;
+    const resourceType = parts[1] as 'image' | 'raw' | 'video';
+    const uploadIndex = parts.findIndex((part) => part === 'upload');
+    if (uploadIndex < 0) return null;
+    let publicParts = parts.slice(uploadIndex + 1);
+    if (publicParts[0] && /^v\d+$/.test(publicParts[0])) {
+      publicParts = publicParts.slice(1);
+    }
+    if (publicParts.length === 0) return null;
+    const last = publicParts[publicParts.length - 1];
+    const formatMatch = last.match(/\.([a-z0-9]+)$/i);
+    const format = formatMatch?.[1]?.toLowerCase();
+    if (format) {
+      publicParts[publicParts.length - 1] = last.replace(/\.[a-z0-9]+$/i, '');
+    }
+    return {
+      publicId: publicParts.join('/'),
+      resourceType: resourceType === 'raw' || resourceType === 'video' ? resourceType : 'image',
+      format,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Build signed authenticated URL for 401 fallback. */
 function getSignedAuthenticatedUrls(cloudinaryUrl: string): string[] {
   const out: string[] = [];
   try {
@@ -56,11 +104,16 @@ function getSignedAuthenticatedUrls(cloudinaryUrl: string): string[] {
     if (pathParts.length < 5) return out;
     const cloudName = pathParts[0];
     const pathAfterUpload = pathParts.slice(3).join('/');
-    const secret = process.env.CLOUDINARY_API_SECRET;
+    const secret = process.env.CLOUDINARY_API_SECRET || cloudinary.config().api_secret;
     if (!secret) return out;
     const toSign = pathAfterUpload + secret;
     const hash = crypto.createHash('sha1').update(toSign).digest();
-    const signature = hash.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '').slice(0, 8);
+    const signature = hash
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
+      .slice(0, 8);
     for (const resourceType of ['image', 'raw']) {
       const signedPath = `/${cloudName}/${resourceType}/authenticated/s--${signature}--/${pathAfterUpload}`;
       out.push(`https://${u.host}${signedPath}`);
@@ -77,82 +130,132 @@ const FETCH_HEADERS = {
   Accept: 'application/pdf,*/*',
 };
 
-async function fetchDocument(url: string, signal: AbortSignal): Promise<Response> {
-  return fetch(url, { signal, headers: FETCH_HEADERS });
+async function fetchDocumentBuffer(
+  url: string,
+  signal: AbortSignal
+): Promise<{ status: number; contentType: string; contentDisposition: string | null; buffer: Buffer }> {
+  const res = await fetch(url, { signal, headers: FETCH_HEADERS });
+  const buffer = Buffer.from(await res.arrayBuffer());
+  return {
+    status: res.status,
+    contentType: res.headers.get('content-type') || '',
+    contentDisposition: res.headers.get('content-disposition'),
+    buffer,
+  };
+}
+
+function isPdfBuffer(buffer: Buffer) {
+  return buffer.subarray(0, 5).toString() === '%PDF-';
 }
 
 export async function GET(request: NextRequest) {
   try {
     const urlParam = request.nextUrl.searchParams.get('url');
+    const forceDownload = request.nextUrl.searchParams.get('download') === '1';
     if (!urlParam || typeof urlParam !== 'string') {
       return NextResponse.json({ error: 'Missing url parameter' }, { status: 400 });
     }
 
-    const originalUrl = resolveUrl(urlParam);
-    const url = toRawPdfUrl(originalUrl);
-    if (!isAllowedUrl(url)) {
-      return NextResponse.json({ error: 'URL not allowed' }, { status: 400 });
-    }
+    const resolvedUrl = resolveUrl(urlParam);
+    const originalUrl = stripCloudinaryTransforms(resolvedUrl);
+    const asset = parseCloudinaryAsset(originalUrl);
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const candidates: string[] = [];
 
-    let res = await fetchDocument(url, controller.signal);
-    if (res.status === 404 && url !== originalUrl) {
-      clearTimeout(timeout);
-      const controller2 = new AbortController();
-      const timeout2 = setTimeout(() => controller2.abort(), 15000);
-      res = await fetchDocument(originalUrl, controller2.signal);
-      clearTimeout(timeout2);
-    } else {
-      clearTimeout(timeout);
-    }
-
-    if (res.status === 401) {
-      const signedUrls = getSignedAuthenticatedUrls(originalUrl);
-      for (const signedUrl of signedUrls) {
-        clearTimeout(timeout);
-        const controller2 = new AbortController();
-        const timeout2 = setTimeout(() => controller2.abort(), 15000);
-        res = await fetchDocument(signedUrl, controller2.signal);
-        clearTimeout(timeout2);
-        if (res.ok) break;
+    // Prefer Cloudinary private download for original PDFs (avoids f_auto PNG previews + ACL blocks).
+    if (asset && (forceDownload || asset.format === 'pdf')) {
+      try {
+        const privateUrl = cloudinary.utils.private_download_url(
+          asset.publicId,
+          asset.format || 'pdf',
+          {
+            resource_type: asset.resourceType,
+            type: 'upload',
+            attachment: forceDownload,
+          }
+        );
+        candidates.push(privateUrl);
+      } catch (error) {
+        console.error('private_download_url failed:', error);
       }
     }
 
-    if (!res.ok) {
-      console.error('view-document upstream:', res.status, res.url);
-      const status = res.status === 404 ? 404 : 502;
-      const message =
-        res.status === 404
-          ? 'Document not found. It may have been removed from Cloudinary or the URL may be incorrect.'
-          : `Upstream returned ${res.status}`;
-      return NextResponse.json({ error: message }, { status });
+    candidates.push(originalUrl, ...getSignedAuthenticatedUrls(originalUrl));
+
+    const uniqueCandidates = Array.from(new Set(candidates.filter(Boolean)));
+    if (!uniqueCandidates.every(isAllowedUrl)) {
+      return NextResponse.json({ error: 'URL not allowed' }, { status: 400 });
     }
 
-    const contentType = res.headers.get('content-type') || 'application/pdf';
-    const contentDisposition = res.headers.get('content-disposition') || 'inline';
-    const body = res.body;
+    let selected: {
+      status: number;
+      contentType: string;
+      contentDisposition: string | null;
+      buffer: Buffer;
+    } | null = null;
 
-    if (!body) {
-      return NextResponse.json({ error: 'No response body' }, { status: 502 });
+    for (const candidate of uniqueCandidates) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+      try {
+        const result = await fetchDocumentBuffer(candidate, controller.signal);
+        if (result.status === 200 && result.buffer.length > 0) {
+          selected = result;
+          break;
+        }
+      } catch (error) {
+        console.error('view-document candidate failed:', candidate, error);
+      } finally {
+        clearTimeout(timeout);
+      }
     }
+
+    if (!selected) {
+      return NextResponse.json(
+        {
+          error:
+            'Full PDF brochure is not available from storage. Please re-upload the brochure as a PDF.',
+        },
+        { status: 502 }
+      );
+    }
+
+    const filename = getFilenameFromUrl(originalUrl);
+    const looksLikePdf = isPdfBuffer(selected.buffer);
+    if (forceDownload && filename.toLowerCase().endsWith('.pdf') && !looksLikePdf) {
+      return NextResponse.json(
+        {
+          error:
+            'Full PDF brochure is not available from storage. Please re-upload the brochure as a PDF.',
+        },
+        { status: 502 }
+      );
+    }
+
+    const safeName = filename.replace(/"/g, '');
+    const contentType = looksLikePdf
+      ? 'application/pdf'
+      : selected.contentType || 'application/octet-stream';
+    const contentDisposition =
+      forceDownload || looksLikePdf
+        ? selected.contentDisposition?.includes('filename=')
+          ? selected.contentDisposition.replace(/inline/i, forceDownload ? 'attachment' : 'inline')
+          : `${forceDownload ? 'attachment' : 'inline'}; filename="${safeName}"`
+        : selected.contentDisposition || `attachment; filename="${safeName}"`;
 
     const headers = new Headers();
     headers.set('Content-Type', contentType);
     headers.set('Content-Disposition', contentDisposition);
+    headers.set('Content-Length', String(selected.buffer.length));
     headers.set('Cache-Control', 'public, max-age=3600');
 
-    return new NextResponse(body, {
+    return new NextResponse(selected.buffer, {
       status: 200,
       headers,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('view-document proxy error:', message);
-    return NextResponse.json(
-      { error: 'Failed to fetch document' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch document' }, { status: 500 });
   }
 }

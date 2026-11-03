@@ -39,8 +39,17 @@ export async function uploadFile(
         if (result && result.secure_url) {
             let finalPath = result.secure_url;
 
-            // Auto-inject optimization parameters for Cloudinary deliveries
-            if (finalPath.includes('res.cloudinary.com') && !finalPath.includes('/raw/upload/')) {
+            // Auto-inject image optimization only for non-PDF Cloudinary deliveries.
+            // f_auto turns PDFs into image previews and blocks full brochure downloads.
+            const isPdf =
+                file.type === 'application/pdf' ||
+                file.name.toLowerCase().endsWith('.pdf') ||
+                finalPath.toLowerCase().includes('.pdf');
+            if (
+                finalPath.includes('res.cloudinary.com') &&
+                !finalPath.includes('/raw/upload/') &&
+                !isPdf
+            ) {
                 finalPath = finalPath.replace('/upload/', '/upload/f_auto,q_auto/');
             }
 
@@ -138,8 +147,13 @@ export async function uploadBase64(
         if (result && (result as any).secure_url) {
             let path = (result as any).secure_url;
 
-            // Auto-inject optimization parameters
-            if (path.includes('res.cloudinary.com') && !path.includes('/raw/upload/')) {
+            // Auto-inject image optimization only for non-PDF Cloudinary deliveries.
+            const isPdf = path.toLowerCase().includes('.pdf') || base64String.startsWith('data:application/pdf');
+            if (
+                path.includes('res.cloudinary.com') &&
+                !path.includes('/raw/upload/') &&
+                !isPdf
+            ) {
                 path = path.replace('/upload/', '/upload/f_auto,q_auto/');
             }
 

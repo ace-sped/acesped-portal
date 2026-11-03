@@ -580,8 +580,13 @@ export default function ProgramsManagement() {
       const data = await uploadResponse.json();
       if (uploadResponse.ok) {
         let path = data.secure_url;
-        // Auto-inject optimization parameters
-        if (path.includes('res.cloudinary.com') && !path.includes('/raw/upload/')) {
+        // Keep PDFs untransformed so brochure downloads return the full file.
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        if (
+          path.includes('res.cloudinary.com') &&
+          !path.includes('/raw/upload/') &&
+          !isPdf
+        ) {
           path = path.replace('/upload/', '/upload/f_auto,q_auto/');
         }
         return path;

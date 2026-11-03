@@ -243,6 +243,18 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
   const curriculum = Array.isArray(program.curriculum) ? program.curriculum : [];
   const requirements = Array.isArray(program.requirements) ? program.requirements : [];
   const careerPaths = Array.isArray(program.careerPaths) ? program.careerPaths : [];
+  const brochureDownloadUrl = program.brochure
+    ? `/api/view-document?download=1&url=${encodeURIComponent(program.brochure)}`
+    : null;
+  const brochureFileName = (() => {
+    if (!program.brochure) return 'brochure.pdf';
+    try {
+      const last = new URL(program.brochure).pathname.split('/').pop() || 'brochure.pdf';
+      return decodeURIComponent(last);
+    } catch {
+      return `${program.courseCode || program.slug || 'brochure'}.pdf`;
+    }
+  })();
 
   // Build breadcrumb
   const breadcrumbItems = [
@@ -311,11 +323,10 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
               Designed to equip you with practical, job-ready skills for today&apos;s digital economy.
             </p>
 
-            {program.brochure && (
+            {brochureDownloadUrl && (
               <a
-                href={program.brochure}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={brochureDownloadUrl}
+                download={brochureFileName}
                 className="inline-flex items-center px-5 py-3 bg-white text-green-800 rounded-xl font-semibold text-sm sm:text-base hover:bg-green-50 transition-colors"
               >
                 <Download className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
@@ -676,11 +687,10 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
                   </button>
                 );
               })()}
-              {program.brochure && (
+              {brochureDownloadUrl && (
                 <a
-                  href={program.brochure}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={brochureDownloadUrl}
+                  download={brochureFileName}
                   className="flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-white border-2 border-green-600 text-green-700 dark:bg-gray-800 dark:border-green-500 dark:text-green-300 rounded-xl font-semibold text-base sm:text-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all flex items-center justify-center"
                 >
                   <Download className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
