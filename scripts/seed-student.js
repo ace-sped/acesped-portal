@@ -56,19 +56,25 @@ async function main() {
         ];
 
         for (const c of coursesData) {
+            const slug = c.code.toLowerCase().replace(' ', '-');
             await prisma.course.upsert({
-                where: { slug: c.code.toLowerCase().replace(' ', '-') },
+                where: {
+                    programId_slug: {
+                        programId: program.id,
+                        slug,
+                    },
+                },
                 update: {},
                 create: {
                     title: c.title,
-                    slug: c.code.toLowerCase().replace(' ', '-'),
+                    slug,
                     courseCode: c.code,
                     creditHours: c.units,
                     courseType: c.type,
                     programId: program.id,
                     overview: '.',
-                    displayOrder: 1
-                }
+                    displayOrder: 1,
+                },
             });
         }
 
