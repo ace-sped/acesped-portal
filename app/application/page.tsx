@@ -25,6 +25,30 @@ type ApplicationStep =
   | 'review'
   | 'payment';
 
+/** Map DB program.level values to Application "Program Type" options. */
+function programMatchesType(programLevel: string | undefined | null, programType: string): boolean {
+  if (!programType) return false;
+  const level = (programLevel || '').toUpperCase().replace(/\s+/g, '_');
+  switch (programType) {
+    case 'PhD':
+      return level === 'PHD' || level === 'MASTERS_AND_PHD';
+    case 'Masters':
+      return level === 'MASTERS' || level === 'MSC' || level === 'MASTERS_AND_PHD';
+    case 'PGD':
+      return level === 'PGD';
+    default:
+      return false;
+  }
+}
+
+function inferProgramTypeFromLevel(programLevel: string | undefined | null): string {
+  const level = (programLevel || '').toUpperCase().replace(/\s+/g, '_');
+  if (level === 'PGD') return 'PGD';
+  if (level === 'PHD') return 'PhD';
+  if (level === 'MASTERS' || level === 'MSC') return 'Masters';
+  return '';
+}
+
 interface ApplicationData {
   // Personal Information
   email: string;
@@ -1078,8 +1102,10 @@ export default function ApplicationPage() {
           );
           if (matchedProgram) {
             setSelectedProgram(matchedProgram);
+            const inferredType = inferProgramTypeFromLevel(matchedProgram.level);
             setFormData(prev => ({
               ...prev,
+              programType: inferredType || prev.programType,
               programChoice: matchedProgram.title || prev.programChoice,
             }));
           }
@@ -1095,6 +1121,15 @@ export default function ApplicationPage() {
     fetchPrograms();
   }, []);
 
+  // Programs available for the currently selected Program Type
+  const filteredPrograms = useMemo(
+    () =>
+      programs.filter((program: any) =>
+        programMatchesType(program.level, formData.programType)
+      ),
+    [programs, formData.programType]
+  );
+
   // Keep selectedProgram in sync with the chosen program title from the database list.
   // This is important after returning from Paystack, when we restore formData (including programChoice)
   // but need to re-link it to the actual program record (with its fee) from the API.
@@ -1105,8 +1140,20 @@ export default function ApplicationPage() {
     const matched = programs.find(
       (p: any) => p.title === formData.programChoice
     );
+
+    // If a type is selected and the saved choice no longer fits, clear it
+    if (
+      matched &&
+      formData.programType &&
+      !programMatchesType(matched.level, formData.programType)
+    ) {
+      setSelectedProgram(null);
+      setFormData((prev) => ({ ...prev, programChoice: '' }));
+      return;
+    }
+
     setSelectedProgram(matched || null);
-  }, [programs, formData.programChoice]);
+  }, [programs, formData.programChoice, formData.programType]);
 
   // Check if this email already has an application
   useEffect(() => {
@@ -1867,7 +1914,20 @@ export default function ApplicationPage() {
                 <select
                   required
                   value={formData.programType}
-                  onChange={(e) => setFormData({ ...formData, programType: e.target.value })}
+                  onChange={(e) => {
+                    const nextType = e.target.value;
+                    const stillValid = programs.some(
+                      (p: any) =>
+                        p.title === formData.programChoice &&
+                        programMatchesType(p.level, nextType)
+                    );
+                    setFormData({
+                      ...formData,
+                      programType: nextType,
+                      programChoice: stillValid ? formData.programChoice : '',
+                    });
+                    if (!stillValid) setSelectedProgram(null);
+                  }}
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white"
                 >
                   <option value="">Select Program Type</option>
@@ -1897,22 +1957,27 @@ export default function ApplicationPage() {
               </label>
               <select
                 required
+                disabled={!formData.programType || programsLoading}
                 value={formData.programChoice}
                 onChange={(e) => {
                   const value = e.target.value;
                   setFormData({ ...formData, programChoice: value });
-                  const matched = programs.find((p: any) => p.title === value);
+                  const matched = filteredPrograms.find((p: any) => p.title === value);
                   setSelectedProgram(matched || null);
                 }}
-                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <option value="">
                   {programsLoading
                     ? 'Loading programs...'
-                    : 'Select Program'}
+                    : !formData.programType
+                      ? 'Select program type first'
+                      : filteredPrograms.length === 0
+                        ? 'No programs for this type'
+                        : 'Select Program'}
                 </option>
                 {!programsLoading &&
-                  programs.map((program: any) => (
+                  filteredPrograms.map((program: any) => (
                     <option key={program.id} value={program.title}>
                       {program.title}
                     </option>
@@ -1921,6 +1986,11 @@ export default function ApplicationPage() {
               {!programsLoading && programsError && (
                 <p className="mt-2 text-xs text-red-600 dark:text-red-400">
                   {programsError}
+                </p>
+              )}
+              {!programsLoading && formData.programType && filteredPrograms.length === 0 && !programsError && (
+                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  No programs are currently available for the selected program type.
                 </p>
               )}
             </div>

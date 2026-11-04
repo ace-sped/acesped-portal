@@ -221,7 +221,7 @@ model Program {
 model Course {
   id            String                      @id @default(cuid())
   title         String
-  slug          String                      @unique
+  slug          String
   overview      String
   isActive      Boolean                     @default(true)
   displayOrder  Int                         @default(0)
@@ -242,6 +242,7 @@ model Course {
   lecturers   Lecturer[]  @relation("CourseLecturers")
   materials   CourseMaterial[]
 
+  @@unique([programId, slug])
   @@index([slug])
   @@index([isActive])
   @@index([displayOrder])

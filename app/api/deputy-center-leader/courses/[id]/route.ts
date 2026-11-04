@@ -83,15 +83,24 @@ export async function PUT(
       );
     }
 
-    // If slug is being changed, check if new slug already exists
-    if (slug && slug !== existingCourse.slug) {
-      const slugExists = await prisma.course.findUnique({
-        where: { slug },
+    // Slug must be unique within the target program
+    const targetProgramId = programId || existingCourse.programId;
+    const nextSlug = slug || existingCourse.slug;
+    if (
+      nextSlug &&
+      (nextSlug !== existingCourse.slug || targetProgramId !== existingCourse.programId)
+    ) {
+      const slugExists = await prisma.course.findFirst({
+        where: {
+          slug: nextSlug,
+          programId: targetProgramId,
+          NOT: { id },
+        },
       });
 
       if (slugExists) {
         return NextResponse.json(
-          { success: false, message: 'Course with this slug already exists' },
+          { success: false, message: 'Course with this slug already exists in this program' },
           { status: 400 }
         );
       }

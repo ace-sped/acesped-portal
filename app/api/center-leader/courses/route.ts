@@ -76,14 +76,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if course with slug already exists
-    const existingCourse = await prisma.course.findUnique({
-      where: { slug },
+    // Slug must be unique within the same program
+    const existingCourse = await prisma.course.findFirst({
+      where: { slug, programId },
     });
 
     if (existingCourse) {
       return NextResponse.json(
-        { success: false, message: 'Course with this slug already exists' },
+        { success: false, message: 'Course with this slug already exists in this program' },
         { status: 400 }
       );
     }

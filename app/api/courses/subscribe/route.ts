@@ -33,8 +33,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find the course (try both Course and Program models)
-    let course = await prisma.course.findUnique({
+    // Find the course (try both Course and Program models).
+    // Slugs are unique per program, so use findFirst when looking up by slug alone.
+    let course = await prisma.course.findFirst({
       where: { slug: courseSlug },
       include: { program: true },
     });

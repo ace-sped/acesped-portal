@@ -89,14 +89,17 @@ export async function POST(request: NextRequest) {
                     throw new Error(`Program '${programTitle}' not found in database. Available: ${programs.length} programs.`);
                 }
 
-                // Generate slug
+                // Generate slug (unique per program so the same course can exist on other programs)
                 let baseSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
                 if (!baseSlug) baseSlug = 'course'; // Fallback
                 let slug = baseSlug;
                 let counter = 1;
 
-                // Check strict slug uniqueness
-                while (await prisma.course.findUnique({ where: { slug } })) {
+                while (
+                    await prisma.course.findFirst({
+                        where: { slug, programId: program.id },
+                    })
+                ) {
                     slug = `${baseSlug}-${counter}`;
                     counter++;
                 }
