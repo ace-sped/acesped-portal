@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { apiErrorPayload } from '@/lib/friendly-error';
 
 // GET all active services (public endpoint)
 export async function GET(request: NextRequest) {
@@ -36,10 +37,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching services:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Failed to fetch services' 
-      },
+      apiErrorPayload(error, 'Unable to load services. Please try again.'),
       { status: 500 }
     );
   }

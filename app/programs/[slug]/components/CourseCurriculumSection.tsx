@@ -19,7 +19,8 @@ interface CourseCurriculumSectionProps {
 export default function CourseCurriculumSection({ courses, programSlug }: CourseCurriculumSectionProps) {
     const isPgdOnlyProgram =
         programSlug === 'additive-manufacturing-3-d-printing-technology-amt' ||
-        programSlug === 'pgd-in-power-electronics-and-control-systems-engineering-pgdpecse';
+        programSlug === 'pgd-in-power-electronics-and-control-systems-engineering-pgdpecse' ||
+        programSlug === 'pgd-in-management-of-technology-moti';
     const [activeLevel, setActiveLevel] = useState<'MSc' | 'PhD' | 'PGD'>(isPgdOnlyProgram ? 'PGD' : 'MSc');
     const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
 

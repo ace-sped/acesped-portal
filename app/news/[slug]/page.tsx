@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/app/components/navbar/page';
 import Footer from '@/app/components/footer/page';
+import LoadErrorModal from '@/app/components/LoadErrorModal';
+import { getFriendlyErrorMessage } from '@/lib/friendly-error';
 import { Calendar, ArrowRight, User, Loader2 } from 'lucide-react';
 
 const defaultNewsImages = ['/images/news/1.jpg', '/images/news/2.jpg', '/images/news/3.jpg'];
@@ -102,7 +104,7 @@ export default function NewsDetailPage({
             : [],
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load article');
+      setError(getFriendlyErrorMessage(err, 'Unable to load this article. Please try again.'));
       setArticle(null);
     } finally {
       setLoading(false);
@@ -116,12 +118,25 @@ export default function NewsDetailPage({
       {loading ? (
         <NewsDetailLoading />
       ) : error || !article ? (
-        <NewsDetailError error={error} onBack={() => router.push('/news')} />
+        <NewsDetailError onBack={() => router.push('/news')} />
       ) : (
         <NewsDetailArticle article={article} onBack={() => router.push('/news')} />
       )}
 
       <Footer />
+
+      <LoadErrorModal
+        open={!!error}
+        title="Unable to Load Article"
+        error={error}
+        onClose={() => setError(null)}
+        onRetry={() => {
+          setError(null);
+          fetchArticle(slug);
+        }}
+        secondaryLabel="Back to News"
+        onSecondary={() => router.push('/news')}
+      />
     </div>
   );
 }
@@ -136,18 +151,18 @@ function NewsDetailLoading() {
 }
 
 function NewsDetailError({
-  error,
   onBack,
 }: {
-  error: string | null;
   onBack: () => void;
 }) {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-        Article not found
+        Unable to Load Article
       </h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+      <p className="text-gray-600 dark:text-gray-400 mb-6">
+        This article could not be loaded right now.
+      </p>
       <button
         onClick={onBack}
         className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"

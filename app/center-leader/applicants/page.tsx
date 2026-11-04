@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import CenterLeaderLayout from '../components/CenterLeaderLayout';
 import ExportApplicationsMenu from '../../components/applicants/ExportApplicationsMenu';
+import LoadErrorModal from '@/app/components/LoadErrorModal';
+import { getFriendlyErrorMessage } from '@/lib/friendly-error';
 import {
   ClipboardList,
   Search,
   Eye,
   Filter,
-  AlertCircle,
   X,
   Mail,
   Phone,
@@ -89,9 +90,10 @@ export default function CenterLeaderApplicantsPage() {
     } catch (err) {
       console.error('Error fetching applications:', err);
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to fetch applicant from database, please check your internet network and try again.'
+        getFriendlyErrorMessage(
+          err,
+          'Unable to load applicants. Please check your connection and try again.'
+        )
       );
     } finally {
       setLoading(false);
@@ -240,14 +242,6 @@ export default function CenterLeaderApplicantsPage() {
             View and manage postgraduate applications
           </p>
         </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            <span>{error}</span>
-          </div>
-        )}
 
         {/* Filters and Search */}
         <div className="mb-6 flex flex-col md:flex-row gap-4">
@@ -607,6 +601,16 @@ export default function CenterLeaderApplicantsPage() {
             </div>
           </div>
         )}
+        <LoadErrorModal
+          open={!!error}
+          title="Unable to Load Applicants"
+          error={error}
+          onClose={() => setError(null)}
+          onRetry={() => {
+            setError(null);
+            fetchApplications();
+          }}
+        />
       </div>
     </CenterLeaderLayout>
   );

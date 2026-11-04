@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/navbar/page';
 import Footer from '../components/footer/page';
+import LoadErrorModal from '../components/LoadErrorModal';
+import { getFriendlyErrorMessage } from '@/lib/friendly-error';
 
 // Icon mapping function
 const getIconComponent = (iconName: string | null) => {
@@ -34,17 +36,18 @@ export default function ProgramsPage() {
   const fetchPrograms = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch('/api/programs');
       const data = await response.json();
       
       if (data.success) {
         setPrograms(data.programs);
       } else {
-        setError('Failed to fetch programs');
+        setError(getFriendlyErrorMessage(data.message, 'Unable to load programs. Please try again.'));
       }
     } catch (err) {
       console.error('Error fetching programs:', err);
-      setError('Error loading programs');
+      setError(getFriendlyErrorMessage(err, 'Unable to load programs. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -149,8 +152,8 @@ export default function ProgramsPage() {
               </div>
             </div>
           ) : error ? (
-            <div className="text-center py-12">
-              <p className="text-red-600 dark:text-red-400 break-words">{error}</p>
+            <div className="text-center py-16">
+              <p className="text-gray-600 dark:text-gray-400">Programs are temporarily unavailable.</p>
             </div>
           ) : programs.length === 0 ? (
             <div className="text-center py-12">
@@ -237,6 +240,19 @@ export default function ProgramsPage() {
       </section>
 
       <Footer />
+
+      <LoadErrorModal
+        open={!!error}
+        title="Unable to Load Programs"
+        error={error}
+        onClose={() => setError(null)}
+        onRetry={() => {
+          setError(null);
+          fetchPrograms();
+        }}
+        secondaryLabel="Go to Home"
+        onSecondary={() => router.push('/')}
+      />
     </div>
   );
 }

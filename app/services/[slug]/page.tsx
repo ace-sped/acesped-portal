@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import Navbar from '@/app/components/navbar/page';
 import Footer from '@/app/components/footer/page';
+import LoadErrorModal from '@/app/components/LoadErrorModal';
+import { getFriendlyErrorMessage } from '@/lib/friendly-error';
 
 // Icon mapping function
 const getIconComponent = (iconName: string | null) => {
@@ -72,11 +74,11 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
           courses: programs, // Ensure courses is also set
         });
       } else {
-        setError(data.message || 'Service not found');
+        setError(getFriendlyErrorMessage(data.message, 'Unable to load this service. Please try again.'));
       }
     } catch (err) {
       console.error('Error fetching service:', err);
-      setError(err instanceof Error ? err.message : 'Error loading service');
+      setError(getFriendlyErrorMessage(err, 'Unable to load this service. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -155,16 +157,11 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                   <FileText className="h-10 w-10 text-red-600 dark:text-red-400" />
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-3">
-                  Service Not Found
+                  Unable to Load Service
                 </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
-                  {error || 'The service you are looking for does not exist or could not be loaded.'}
+                <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
+                  This service could not be loaded right now.
                 </p>
-                {slug && (
-                  <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
-                    Service slug: <span className="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{slug}</span>
-                  </p>
-                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -217,6 +214,19 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
         </section>
 
         <Footer />
+
+        <LoadErrorModal
+          open={!!error}
+          title="Unable to Load Service"
+          error={error}
+          onClose={() => setError(null)}
+          onRetry={() => {
+            setError(null);
+            fetchService(slug);
+          }}
+          secondaryLabel="View All Services"
+          onSecondary={() => router.push('/services')}
+        />
       </div>
     );
   }

@@ -21,6 +21,8 @@ import {
 import { TbCurrencyNaira } from 'react-icons/tb';
 import Navbar from '@/app/components/navbar/page';
 import Footer from '@/app/components/footer/page';
+import LoadErrorModal from '@/app/components/LoadErrorModal';
+import { getFriendlyErrorMessage } from '@/lib/friendly-error';
 import CourseCurriculumSection from './components/CourseCurriculumSection';
 
 // Helper function to get level display name
@@ -75,8 +77,7 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
           errorMessage = response.statusText || errorMessage;
         }
 
-        // Set error state instead of throwing
-        setError(errorMessage);
+        setError(getFriendlyErrorMessage(errorMessage, 'Unable to load this program. Please try again.'));
         setLoading(false);
         return;
       }
@@ -102,17 +103,10 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
       if (data.success && data.program) {
         setProgram(data.program);
       } else {
-        setError(data.message || 'Program not found');
+        setError(getFriendlyErrorMessage(data.message, 'Unable to load this program. Please try again.'));
       }
     } catch (err) {
-      // Handle network errors and other exceptions
-      const errorMessage = err instanceof Error
-        ? (err.message.includes('fetch') || err.message.includes('network')
-          ? 'Network error. Please check your connection and try again.'
-          : err.message)
-        : 'An unexpected error occurred. Please try again.';
-
-      setError(errorMessage);
+      setError(getFriendlyErrorMessage(err, 'Unable to load this program. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -172,16 +166,11 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
                   <FileText className="h-10 w-10 text-red-600 dark:text-red-400" />
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-3">
-                  Program Not Found
+                  Unable to Load Program
                 </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
-                  {error || 'The program you are looking for does not exist or could not be loaded.'}
+                <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
+                  This program could not be loaded right now.
                 </p>
-                {slug && (
-                  <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
-                    Program slug: <span className="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{slug}</span>
-                  </p>
-                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -234,6 +223,19 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ slug: 
         </section>
 
         <Footer />
+
+        <LoadErrorModal
+          open={!!error}
+          title="Unable to Load Program"
+          error={error}
+          onClose={() => setError(null)}
+          onRetry={() => {
+            setError(null);
+            fetchProgram(slug);
+          }}
+          secondaryLabel="View All Programs"
+          onSecondary={() => router.push('/programs')}
+        />
       </div>
     );
   }

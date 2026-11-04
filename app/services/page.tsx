@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   GraduationCap, Microscope, Lightbulb, Briefcase, ArrowRight, ArrowLeft,
-  Users, Award, BookOpen, Loader2, Check
+  Users, Award, BookOpen, Loader2
 } from 'lucide-react';
 import Navbar from '../components/navbar/page';
 import Footer from '../components/footer/page';
+import LoadErrorModal from '../components/LoadErrorModal';
+import { getFriendlyErrorMessage } from '@/lib/friendly-error';
 
 // Icon mapping function
 const getIconComponent = (iconName: string | null) => {
@@ -38,7 +40,6 @@ export default function ServicesPage() {
       const response = await fetch('/api/services');
       
       if (!response.ok) {
-        // Try to parse error message from response
         let errorMessage = `Failed to fetch services: ${response.status} ${response.statusText}`;
         try {
           const errorData = await response.json();
@@ -46,7 +47,7 @@ export default function ServicesPage() {
         } catch {
           // If response is not JSON, use the default error message
         }
-        setError(errorMessage);
+        setError(getFriendlyErrorMessage(errorMessage, 'Unable to load services. Please try again.'));
         return;
       }
       
@@ -55,12 +56,11 @@ export default function ServicesPage() {
       if (data.success) {
         setServices(data.services || []);
       } else {
-        setError(data.message || 'Failed to fetch services');
+        setError(getFriendlyErrorMessage(data.message, 'Unable to load services. Please try again.'));
       }
     } catch (err) {
       console.error('Error fetching services:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error loading services';
-      setError(errorMessage);
+      setError(getFriendlyErrorMessage(err, 'Unable to load services. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -165,58 +165,8 @@ export default function ServicesPage() {
               </div>
             </div>
           ) : error ? (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-red-200 dark:border-red-800 p-8 sm:p-12 text-center">
-              <div className="mb-6">
-                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Loader2 className="h-8 w-8 text-red-600 dark:text-red-400" />
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                  Unable to Load Services
-                </h2>
-                <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 break-words">
-                  {error}
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button
-                  onClick={() => {
-                    setError(null);
-                    setLoading(true);
-                    fetchServices();
-                  }}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center"
-                >
-                  <Loader2 className="h-4 w-4 mr-2" />
-                  Try Again
-                </button>
-                <button
-                  onClick={() => router.push('/')}
-                  className="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold"
-                >
-                  Go to Home
-                </button>
-              </div>
-
-              <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
-                  Troubleshooting tips:
-                </p>
-                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2 text-left max-w-md mx-auto">
-                  <li className="flex items-start">
-                    <Check className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span>Check your internet connection</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span>Try refreshing the page</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <span>Contact support if the problem persists</span>
-                  </li>
-                </ul>
-              </div>
+            <div className="text-center py-16">
+              <p className="text-gray-600 dark:text-gray-400">Services are temporarily unavailable.</p>
             </div>
           ) : services.length === 0 ? (
             <div className="text-center py-12">
@@ -303,6 +253,19 @@ export default function ServicesPage() {
       </section>
 
       <Footer />
+
+      <LoadErrorModal
+        open={!!error}
+        title="Unable to Load Services"
+        error={error}
+        onClose={() => setError(null)}
+        onRetry={() => {
+          setError(null);
+          fetchServices();
+        }}
+        secondaryLabel="Go to Home"
+        onSecondary={() => router.push('/')}
+      />
     </div>
   );
 }

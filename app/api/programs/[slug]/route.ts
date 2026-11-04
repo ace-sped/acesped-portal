@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { apiErrorPayload } from '@/lib/friendly-error';
 
 // GET single program by slug (public endpoint)
 export async function GET(
@@ -53,25 +54,15 @@ export async function GET(
   } catch (error: any) {
     console.error('Error fetching program:', error);
 
-    // Provide more specific error messages
-    let errorMessage = 'Failed to fetch program';
-    if (error?.code === 'P2002') {
-      errorMessage = 'Database constraint violation';
-    } else if (error?.code === 'P2025') {
-      errorMessage = 'Program not found';
-    } else if (error?.message) {
-      errorMessage = error.message;
+    if (error?.code === 'P2025') {
+      return NextResponse.json(
+        { success: false, message: 'Program not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(
-      {
-        success: false,
-        message: errorMessage,
-        ...(process.env.NODE_ENV === 'development' && {
-          error: error?.message,
-          code: error?.code
-        })
-      },
+      apiErrorPayload(error, 'Unable to load this program. Please try again.'),
       { status: 500 }
     );
   }
