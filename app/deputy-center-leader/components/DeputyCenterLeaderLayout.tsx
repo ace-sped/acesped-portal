@@ -175,7 +175,7 @@ export default function DeputyCenterLeaderLayout({ children }: DeputyCenterLeade
       </aside>
 
       {/* Main Content */}
-      <div className={`${sidebarOpen ? 'ml-64' : 'ml-0'} transition-all duration-300`}>
+      <div className={`min-w-0 max-w-full overflow-x-hidden ${sidebarOpen ? 'ml-64' : 'ml-0'} transition-all duration-300`}>
         {/* Top Bar */}
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
           <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
@@ -219,7 +219,7 @@ export default function DeputyCenterLeaderLayout({ children }: DeputyCenterLeade
         </header>
 
         {/* Page Content */}
-        <main className="min-h-screen px-4 sm:px-6 lg:px-8 xl:px-10 py-6 lg:py-8 pb-12">
+        <main className="min-h-screen min-w-0 max-w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 lg:py-8 pb-12">
           {children}
         </main>
       </div>

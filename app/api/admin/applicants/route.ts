@@ -48,26 +48,56 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH update a single application (e.g. status)
+// PATCH update a single application (status and/or payment reference)
 export async function PATCH(request: NextRequest) {
   try {
     // TODO: Add authentication/authorization checks
     const body = await request.json();
     const { id, status } = body;
+    const hasPaymentReferenceUpdate = Object.prototype.hasOwnProperty.call(
+      body,
+      'paymentReference'
+    );
+    const paymentReference = hasPaymentReferenceUpdate
+      ? typeof body.paymentReference === 'string'
+        ? body.paymentReference.trim()
+        : ''
+      : undefined;
 
-    if (!id || !status) {
+    if (!id) {
       return NextResponse.json(
-        { success: false, message: 'Application id and status are required' },
+        { success: false, message: 'Application id is required' },
         { status: 400 }
       );
     }
 
-    const validStatuses = ['PENDING', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'AWAITING_PAYMENT'];
-    if (!validStatuses.includes(status)) {
+    if (!status && !hasPaymentReferenceUpdate) {
       return NextResponse.json(
-        { success: false, message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        {
+          success: false,
+          message: 'Provide status and/or paymentReference to update.',
+        },
         { status: 400 }
       );
+    }
+
+    if (status) {
+      const validStatuses = [
+        'PENDING',
+        'UNDER_REVIEW',
+        'APPROVED',
+        'REJECTED',
+        'AWAITING_PAYMENT',
+      ];
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Fetch existing application to detect status change
@@ -83,39 +113,55 @@ export async function PATCH(request: NextRequest) {
     }
 
     let applicationNumber = existing.applicationNumber;
+    const nextStatus = status || existing.status;
 
     // Auto-generate application number if approving and it doesn't exist
     if (status === 'APPROVED' && !applicationNumber) {
       const year = new Date().getFullYear();
-      // Simple generation: ACE/YEAR/RANDOM or Count
-      // To avoid race conditions in a real high-volume app, we'd use a sequence or atomic counter.
-      // Here, we'll try a count-based approach or random to keep it unique.
       const count = await prisma.application.count({
         where: {
-          applicationNumber: { startsWith: `ACE/${year}/` }
-        }
+          applicationNumber: { startsWith: `ACE/${year}/` },
+        },
       });
       const sequence = (count + 1).toString().padStart(4, '0');
       applicationNumber = `ACE/${year}/${sequence}`;
 
-      // Double check uniqueness (simplified retry logic could be added)
-      const check = await prisma.application.findUnique({ where: { applicationNumber } });
+      const check = await prisma.application.findUnique({
+        where: { applicationNumber },
+      });
       if (check) {
-        // Fallback random if collision (rare for this scale)
-        applicationNumber = `ACE/${year}/${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+        applicationNumber = `ACE/${year}/${Math.floor(Math.random() * 10000)
+          .toString()
+          .padStart(4, '0')}`;
+      }
+    }
+
+    const data: {
+      status?: string;
+      applicationNumber?: string | null;
+      paymentReference?: string;
+      paymentMethod?: string;
+    } = {};
+
+    if (status) {
+      data.status = status;
+      data.applicationNumber = applicationNumber;
+    }
+
+    if (hasPaymentReferenceUpdate) {
+      data.paymentReference = paymentReference || '';
+      if (paymentReference) {
+        data.paymentMethod = existing.paymentMethod || 'Paystack';
       }
     }
 
     const updated = await prisma.application.update({
       where: { id },
-      data: {
-        status,
-        applicationNumber: applicationNumber // Update if generated
-      },
+      data,
     });
 
     // If status changed from non-approved to APPROVED, send congratulatory email
-    if (existing.status !== 'APPROVED' && status === 'APPROVED') {
+    if (existing.status !== 'APPROVED' && nextStatus === 'APPROVED' && status) {
       try {
         console.log('Attemping to send admission approval email to:', updated.email);
         await sendAdmissionApprovedEmail({
@@ -129,10 +175,7 @@ export async function PATCH(request: NextRequest) {
         console.log('Admission approval email process completed.');
       } catch (emailError) {
         console.error('Failed to send admission email:', emailError);
-        // Do not fail the request because of email errors
       }
-    } else {
-      console.log('Skipping email: Status change condition not met. Old:', existing.status, 'New:', status);
     }
 
     return NextResponse.json({
@@ -148,10 +191,9 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// DELETE a single application
+// DELETE an application
 export async function DELETE(request: NextRequest) {
   try {
-    // TODO: Add authentication/authorization checks
     const body = await request.json();
     const { id } = body;
 
@@ -178,5 +220,3 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
-
-

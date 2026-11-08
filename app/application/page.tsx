@@ -4,10 +4,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   ArrowRight, ArrowLeft, Check, Upload, X, User, Users,
   GraduationCap, Briefcase, FileText, Camera,
-  Mail, Phone, MapPin, Calendar, BookOpen, CreditCard,
+  Mail, Phone, MapPin, Calendar, BookOpen,
   Info, AlertTriangle, XCircle, CheckCircle, ClipboardList
 } from 'lucide-react';
-import { TbCurrencyNaira } from 'react-icons/tb';
 import Image from 'next/image';
 import Navbar from '../components/navbar/page';
 import Footer from '../components/footer/page';
@@ -22,8 +21,24 @@ type ApplicationStep =
   | 'employment'
   | 'research'
   | 'recommendations'
-  | 'review'
-  | 'payment';
+  | 'review';
+
+function normalizeApplicationStep(step: string | null | undefined): ApplicationStep | null {
+  if (!step) return null;
+  if (step === 'payment') return 'review';
+  const allowed: ApplicationStep[] = [
+    'requirements',
+    'personal',
+    'nextOfKin',
+    'program',
+    'education',
+    'employment',
+    'research',
+    'recommendations',
+    'review',
+  ];
+  return allowed.includes(step as ApplicationStep) ? (step as ApplicationStep) : null;
+}
 
 /** Map DB program.level values to Application "Program Type" options. */
 function programMatchesType(programLevel: string | undefined | null, programType: string): boolean {
@@ -392,7 +407,6 @@ const locationData: Record<string, Record<string, string[]>> = {
 };
 
 const PAYMENT_STORAGE_KEY = 'acePaymentRecord';
-const PAYMENT_WAIVED_EMAILS = ['pmelvils89@gmail.com'];
 
 const FORCED_PAYMENT_REFERENCE = 'T184398562616414';
 
@@ -637,115 +651,6 @@ export default function ApplicationPage() {
     }
   };
 
-  // Paystack payment handler - mirrors SkillApplication dynamic initialize flow
-  const handlePaystackPayment = async (e?: React.MouseEvent<HTMLButtonElement>) => {
-    // Prevent any default behavior
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    try {
-      // Validate email
-      if (!formData.email || formData.email.trim() === '') {
-        openAlertModal(
-          'Email Required',
-          'Please fill in your email address before proceeding to payment.',
-          'warning'
-        );
-        return;
-      }
-
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        openAlertModal('Invalid Email Address', 'Please enter a valid email address.', 'warning');
-        return;
-      }
-
-      const amountInNaira = getApplicationPriceInNaira();
-      if (!amountInNaira || amountInNaira <= 0) {
-        openAlertModal(
-          'Invalid Application Fee',
-          'The application fee amount is unavailable. Please contact support.',
-          'error'
-        );
-        return;
-      }
-
-      // Store form data in sessionStorage before redirecting
-      if (typeof window !== 'undefined') {
-        try {
-          persistApplicationDraft({ currentStep: 'payment' });
-        } catch (storageError) {
-          console.error('Error saving to sessionStorage:', storageError);
-        }
-
-        try {
-          const response = await fetch('/api/payments/initialize', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: formData.email,
-              amount: amountInNaira * 100, // Paystack expects kobo
-              callback_path: '/application',
-            }),
-          });
-
-          const data = await response.json();
-
-          if (!response.ok || !data.success || !data.authorization_url) {
-            console.error('Failed to initialize payment:', data);
-            openAlertModal(
-              'Payment Initialization Failed',
-              data.message || 'Failed to initialize payment. Please try again.',
-              'error'
-            );
-            return;
-          }
-
-          if (data.reference) {
-            persistApplicationDraft({
-              currentStep: 'payment',
-              formData: {
-                ...formData,
-                paymentReference: data.reference,
-                paymentMethod: 'Paystack',
-              },
-              paymentCompleted: false,
-            });
-            safeSessionStorageSet('acePendingPaymentReference', data.reference);
-          }
-
-          console.log('Redirecting to Paystack payment page:', data.authorization_url);
-          window.location.href = data.authorization_url;
-        } catch (initError) {
-          console.error('Error initializing Paystack payment:', initError);
-          openAlertModal(
-            'Payment Error',
-            'An error occurred while initializing payment. Please try again.',
-            'error'
-          );
-        }
-      } else {
-        openAlertModal(
-          'Payment Unavailable',
-          'Unable to proceed with payment. Please try again.',
-          'error'
-        );
-      }
-    } catch (error: any) {
-      console.error('Error in handlePaystackPayment:', error);
-      openAlertModal(
-        'Payment Error',
-        'An error occurred while processing your payment request. Please try again.',
-        'error'
-      );
-    }
-  };
-
   const steps: { id: ApplicationStep; title: string; icon: any }[] = [
     { id: 'requirements', title: 'Requirements', icon: FileText },
     { id: 'personal', title: 'Personal Info', icon: User },
@@ -756,7 +661,6 @@ export default function ApplicationPage() {
     { id: 'research', title: 'Research', icon: FileText },
     { id: 'recommendations', title: 'Recommendations', icon: Mail },
     { id: 'review', title: 'Review & Submit', icon: ClipboardList },
-    { id: 'payment', title: 'Payment', icon: TbCurrencyNaira },
   ];
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
@@ -854,10 +758,6 @@ export default function ApplicationPage() {
 
       case 'review':
         break;
-
-      case 'payment':
-        if (!paymentCompleted) missing.push('Completed Payment');
-        break;
     }
 
     return missing;
@@ -865,10 +765,6 @@ export default function ApplicationPage() {
 
   const isStepComplete = (step: ApplicationStep) =>
     getMissingRequiredFields(step).length === 0;
-
-  const paymentWaived = PAYMENT_WAIVED_EMAILS.includes(
-    formData.email.trim().toLowerCase()
-  );
 
   const currentStepMissingFields = getMissingRequiredFields(currentStep);
 
@@ -1215,21 +1111,7 @@ export default function ApplicationPage() {
           ...(saved.formData as ApplicationData),
           email: String(saved.formData.email || normalizedEmail),
         };
-        const allowedSteps: ApplicationStep[] = [
-          'requirements',
-          'personal',
-          'nextOfKin',
-          'program',
-          'education',
-          'employment',
-          'research',
-          'recommendations',
-          'review',
-          'payment',
-        ];
-        const nextStep = allowedSteps.includes(saved.currentStep)
-          ? (saved.currentStep as ApplicationStep)
-          : 'personal';
+        const nextStep = normalizeApplicationStep(saved.currentStep) || 'personal';
 
         loadedDraftEmailRef.current = normalizedEmail;
         if (saved.id) {
@@ -1274,28 +1156,6 @@ export default function ApplicationPage() {
   }, [formData.email]);
 
   // Helper to get the numeric application fee in Naira for Paystack
-  // Primary source: `fee` field from the selected program in the database.
-  // Fallback: flat ₦26,700 if no valid fee is set.
-  const getApplicationPriceInNaira = (): number => {
-    const fee = selectedProgram?.fee;
-
-    if (fee && typeof fee === 'string' && fee.trim() !== '') {
-      const numeric = parseInt(fee.replace(/[₦,\s]/g, ''), 10);
-      if (!isNaN(numeric) && numeric > 0) {
-        return numeric;
-      }
-    }
-
-    // Default application fee if no valid fee is set on the program
-    return 26700;
-  };
-
-  // Display string for the application fee (reactive to selectedProgram changes)
-  const applicationFeeDisplay = useMemo(() => {
-    const amount = getApplicationPriceInNaira();
-    return `₦${amount.toLocaleString()}`;
-  }, [selectedProgram]);
-
   const reviewText = (value: string | undefined | null) => {
     const text = typeof value === 'string' ? value.trim() : '';
     if (!text) return '—';
@@ -2560,112 +2420,6 @@ export default function ApplicationPage() {
               ['Second referee phone', formData.referee2Phone],
               ['Second referee institution', formData.referee2Institution],
             ])}
-            {renderReviewSection('Payment', 'payment', [
-              ['Payment method', formData.paymentMethod],
-              ['Payment reference', formData.paymentReference],
-              ['Payment status', paymentCompleted || paymentWaived ? 'Completed' : 'Not completed'],
-            ])}
-          </div>
-        );
-
-      case 'payment':
-        return (
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Payment Information</h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Complete your application by making the required payment via Paystack
-            </p>
-
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-3xl font-bold text-green-900 dark:text-green-100">Application Fee</h3>
-                  <p className="text-5xl font-bold text-green-700 dark:text-green-300 mt-2">
-                    {applicationFeeDisplay}
-                  </p>
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-full">
-                  <CreditCard className="h-16 w-16 text-green-600" />
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6">
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                  <Check className="h-5 w-5 text-green-600 mr-2" />
-                  Secure Payment via Paystack
-                </h4>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                  <li className="flex items-start">
-                    <span className="text-green-600 mr-2">•</span>
-                    Pay with Card (Visa, Mastercard, Verve)
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-600 mr-2">•</span>
-                    Bank Transfer & USSD
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-600 mr-2">•</span>
-                    Mobile Money
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-600 mr-2">•</span>
-                    Instant payment confirmation
-                  </li>
-                </ul>
-              </div>
-
-              {!paymentCompleted ? (
-                <div className="space-y-4">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <p className="text-sm text-blue-900 dark:text-blue-100">
-                      <strong>Important:</strong> Please ensure your email address ({formData.email || 'not provided'}) is correct before proceeding to payment.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={(e) => handlePaystackPayment(e)}
-                    type="button"
-                    disabled={!formData.email || formData.email.trim() === ''}
-                    className="w-full px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold text-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
-                  >
-                    <CreditCard className="h-6 w-6 mr-3" />
-                    Pay {applicationFeeDisplay} with Paystack
-                  </button>
-                  {(!formData.email || formData.email.trim() === '') && (
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-center">
-                      Please fill in your email address in the Personal Information section to proceed with payment
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-lg p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-green-500 rounded-full p-2 mr-4">
-                      <Check className="h-8 w-8 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="text-xl font-bold text-green-900 dark:text-green-100">Payment Successful!</h4>
-                      <p className="text-green-700 dark:text-green-300">Your payment has been confirmed</p>
-                    </div>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Transaction Reference:</span>
-                    </div>
-                    <p className="font-mono text-lg font-semibold text-gray-900 dark:text-white break-all">
-                      {formData.paymentReference}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-              <p className="text-sm text-yellow-900 dark:text-yellow-100">
-                <strong>Note:</strong> After payment, return to Review &amp; Submit to send your application.
-                You will receive a confirmation email with your application reference number within 24 hours.
-              </p>
-            </div>
           </div>
         );
 
@@ -2730,7 +2484,8 @@ export default function ApplicationPage() {
             if (!saved?.formData || typeof saved.formData !== 'object') return;
 
             const nextForm = saved.formData as ApplicationData;
-            const nextStep = (saved.currentStep as ApplicationStep) || 'requirements';
+            const nextStep =
+              normalizeApplicationStep(saved.currentStep) || 'requirements';
             const restoredPayment = clearForcedPaymentState(nextForm, false);
             setFormData((prev) => ({ ...prev, ...restoredPayment.form }));
             syncLocationOptions(restoredPayment.form);
@@ -2768,9 +2523,9 @@ export default function ApplicationPage() {
         returnedFromPayment
       );
       const nextForm = restoredPayment.form;
-      const nextStep: ApplicationStep = returnedFromPayment
-        ? 'payment'
-        : restoredStep || 'requirements';
+      const nextStep: ApplicationStep =
+        normalizeApplicationStep(returnedFromPayment ? 'review' : restoredStep) ||
+        'requirements';
 
       setFormData((prev) => ({ ...prev, ...nextForm }));
       if (restoredForm) {
@@ -2807,7 +2562,7 @@ export default function ApplicationPage() {
           console.error('Error storing payment record:', storageError);
         }
 
-        // If an application was already submitted, link this payment to it (one payment only)
+        // Link payment to a submitted application if one already exists
         if (paymentRef && nextForm.email) {
           void fetch('/api/applicant/payment/link', {
             method: 'POST',
@@ -2824,7 +2579,7 @@ export default function ApplicationPage() {
         window.history.replaceState({}, '', '/application');
         openAlertModal(
           'Payment Successful',
-          'Payment successful! You can now submit your application.',
+          'Payment successful. You can track your application from the Applicant Dashboard.',
           'success'
         );
       }
@@ -2832,14 +2587,14 @@ export default function ApplicationPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // A saved reference is only a completed payment after Paystack redirects back.
+  // Keep paymentCompleted in sync with a stored reference
   useEffect(() => {
     if (formData.paymentReference.trim() === '') {
       setPaymentCompleted(false);
     }
   }, [formData.paymentReference]);
 
-  // Attempt to restore payment reference when email matches stored record
+  // Restore payment reference when email matches stored record (no payment stage)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!formData.email || formData.email.trim() === '') return;
@@ -2856,14 +2611,13 @@ export default function ApplicationPage() {
 
       if (normalizedEmail === savedEmail && savedRecord.confirmed === true) {
         if (formData.paymentReference !== savedRecord.reference) {
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             paymentReference: savedRecord.reference,
             paymentMethod: 'Paystack',
           }));
         }
         setPaymentCompleted(true);
-        setCurrentStep('payment');
       }
     } catch (error) {
       console.error('Error parsing saved payment record:', error);
@@ -2871,7 +2625,7 @@ export default function ApplicationPage() {
     }
   }, [formData.email]);
 
-  // Persist payment reference with associated email for future restores
+  // Persist payment reference with associated email for dashboard linking
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!paymentCompleted) return;
@@ -3068,28 +2822,16 @@ export default function ApplicationPage() {
             </button>
 
             {currentStep === 'review' ? (
-              <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-start">
+              <div className="flex flex-col items-end">
                 <button
-                  onClick={handleNext}
-                  disabled={isNextDisabled}
-                  className="px-6 py-3 bg-white dark:bg-gray-800 text-green-700 dark:text-green-300 border border-green-600 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold"
                 >
-                  Next
-                  <ArrowRight className="h-5 w-5 ml-2" />
+                  {loading ? 'Submitting...' : 'Submit Application'}
+                  <Check className="h-5 w-5 ml-2" />
                 </button>
-                <div className="flex flex-col items-end">
-                  <button
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold"
-                  >
-                    {loading ? 'Submitting...' : 'Submit Application'}
-                    <Check className="h-5 w-5 ml-2" />
-                  </button>
-                </div>
               </div>
-            ) : currentStepIndex === steps.length - 1 ? (
-              <span />
             ) : (
               <div className="flex flex-col items-end">
                 <button
@@ -3127,7 +2869,6 @@ export default function ApplicationPage() {
               <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
                 Your application has been submitted. A confirmation email has been sent to{' '}
                 <span className="font-semibold text-gray-900 dark:text-white">{formData.email || 'your email address'}</span>.
-                Continue to payment to complete your application.
               </p>
               <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-4 mb-6 text-left space-y-3 border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center justify-between">
@@ -3152,20 +2893,17 @@ export default function ApplicationPage() {
               <button
                 onClick={() => {
                   setShowSuccessModal(false);
-                  setCurrentStep('payment');
-                  if (typeof window !== 'undefined') {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }
+                  window.location.href = '/applicant/login';
                 }}
                 className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg hover:scale-[1.02] transition-all"
               >
-                Proceed to Application Payment (Only Nigerians)
+                Login to complete application fee
               </button>
               <button
                 onClick={() => setShowSuccessModal(false)}
                 className="mt-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
-                Ok
+                Close
               </button>
             </div>
           </div>

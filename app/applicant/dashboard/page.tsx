@@ -7,13 +7,11 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
-  FileText,
   GraduationCap,
   Loader2,
   LogOut,
   RefreshCw,
   ShieldCheck,
-  XCircle,
 } from 'lucide-react';
 import { hasPaidApplicationFee } from '@/lib/application-fee';
 import { getFriendlyErrorMessage } from '@/lib/friendly-error';
@@ -30,6 +28,7 @@ interface ApplicantApplication {
   firstname: string;
   surname: string;
   email: string;
+  avatar?: string | null;
   nationality: string;
   programType: string;
   programChoice: string;
@@ -48,52 +47,14 @@ interface ApplicantApplication {
   paymentProof?: string | null;
 }
 
-const STATUS_META: Record<
-  string,
-  { label: string; tone: string; icon: typeof Clock; hint: string }
-> = {
-  PENDING: {
-    label: 'Pending Review',
-    tone: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200',
-    icon: Clock,
-    hint: 'Your application has been received and is awaiting review.',
-  },
-  UNDER_REVIEW: {
-    label: 'Under Review',
-    tone: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200',
-    icon: FileText,
-    hint: 'Your application is currently being assessed by the admissions team.',
-  },
-  APPROVED: {
-    label: 'Approved',
-    tone: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
-    icon: CheckCircle2,
-    hint: 'Congratulations! Your application has been approved.',
-  },
-  REJECTED: {
-    label: 'Not Successful',
-    tone: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200',
-    icon: XCircle,
-    hint: 'Unfortunately this application was not successful at this time.',
-  },
-  AWAITING_PAYMENT: {
-    label: 'Awaiting Payment',
-    tone: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200',
-    icon: CreditCard,
-    hint: 'Complete your application fee payment to continue processing.',
-  },
-};
-
 export default function ApplicantDashboardPage() {
   const router = useRouter();
   const [application, setApplication] = useState<ApplicantApplication | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
-  const [verifying, setVerifying] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(
     null
   );
-  const [trackReference, setTrackReference] = useState('');
 
   const loadApplication = useCallback(async (applicationNumber: string) => {
     const response = await fetch(
@@ -110,7 +71,6 @@ export default function ApplicantDashboardPage() {
 
   const verifyPayment = useCallback(
     async (reference: string, applicationNumber: string, silent = false) => {
-      setVerifying(true);
       if (!silent) setMessage(null);
 
       try {
@@ -132,7 +92,6 @@ export default function ApplicantDashboardPage() {
             ? 'Application fee already paid. Only one payment is allowed.'
             : `Payment verified. Reference: ${reference}`,
         });
-        setTrackReference('');
         try {
           localStorage.removeItem('acePaymentRecord');
         } catch {
@@ -145,8 +104,6 @@ export default function ApplicantDashboardPage() {
             text: getFriendlyErrorMessage(err, 'Unable to verify this payment reference.'),
           });
         }
-      } finally {
-        setVerifying(false);
       }
     },
     [loadApplication]
@@ -342,12 +299,6 @@ export default function ApplicantDashboardPage() {
     }
   };
 
-  const handleTrackPayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!application || !trackReference.trim()) return;
-    await verifyPayment(trackReference.trim(), application.applicationNumber);
-  };
-
   const handleLogout = () => {
     safeSessionStorageRemove(APPLICANT_SESSION_KEY);
     safeSessionStorageRemove('aceApplicantPendingPayment');
@@ -382,8 +333,33 @@ export default function ApplicantDashboardPage() {
     );
   }
 
-  const meta = STATUS_META[application.status] || STATUS_META.PENDING;
-  const StatusIcon = meta.icon;
+  const statusBanner: {
+    label: string;
+    hint: React.ReactNode;
+    tone: string;
+    icon: typeof Clock;
+  } = hasPaidFee
+    ? {
+        label: 'Application Status',
+        hint: 'Congratulations! Your application has been received.',
+        tone: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
+        icon: CheckCircle2,
+      }
+    : {
+        label: 'Application Status',
+        hint: (
+          <>
+            Pending Review. Click on{' '}
+            <span className="font-bold underline decoration-2 underline-offset-2 bg-amber-200/80 dark:bg-amber-800/60 px-1 rounded">
+              Pay Application Fee
+            </span>{' '}
+            button at the bottom of this page to make Payment.
+          </>
+        ),
+        tone: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200',
+        icon: Clock,
+      };
+  const StatusIcon = statusBanner.icon;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-950 via-emerald-900 to-green-800 py-8 px-4">
@@ -420,9 +396,17 @@ export default function ApplicantDashboardPage() {
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-white/10">
           <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-7 text-white">
             <div className="flex items-start gap-4">
-              <div className="bg-white/15 rounded-xl p-3">
-                <GraduationCap className="h-7 w-7" />
-              </div>
+              {application.avatar ? (
+                <img
+                  src={application.avatar}
+                  alt={`${application.firstname} ${application.surname}`}
+                  className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl object-cover border-2 border-white/40 shadow-md bg-white/10 shrink-0"
+                />
+              ) : (
+                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl bg-white/15 border-2 border-white/30 flex items-center justify-center shrink-0">
+                  <GraduationCap className="h-8 w-8" />
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="text-green-100 text-sm mb-1">Applicant Dashboard</p>
                 <h1 className="text-2xl font-bold truncate">
@@ -450,11 +434,11 @@ export default function ApplicantDashboardPage() {
               </div>
             )}
 
-            <div className={`rounded-xl px-4 py-4 flex items-start gap-3 ${meta.tone}`}>
+            <div className={`rounded-xl px-4 py-4 flex items-start gap-3 ${statusBanner.tone}`}>
               <StatusIcon className="h-5 w-5 mt-0.5 shrink-0" />
               <div>
-                <p className="font-semibold">{meta.label}</p>
-                <p className="text-sm mt-1 opacity-90">{meta.hint}</p>
+                <p className="font-semibold">{statusBanner.label}</p>
+                <p className="text-sm mt-1 opacity-90">{statusBanner.hint}</p>
               </div>
             </div>
 
@@ -582,47 +566,6 @@ export default function ApplicantDashboardPage() {
                         </>
                       )}
                     </button>
-                  </div>
-                )}
-
-                {application.isNigerian && !hasPaidFee && (
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                      Track payment with application number
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                      Already paid? Enter your Paystack payment reference to link it to{' '}
-                      <span className="font-mono font-semibold text-gray-700 dark:text-gray-200">
-                        {application.applicationNumber}
-                      </span>
-                      .
-                    </p>
-                    <form
-                      onSubmit={handleTrackPayment}
-                      className="flex flex-col sm:flex-row gap-2"
-                    >
-                      <input
-                        type="text"
-                        value={trackReference}
-                        onChange={(e) => setTrackReference(e.target.value)}
-                        placeholder="Payment reference (e.g. T123...)"
-                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      <button
-                        type="submit"
-                        disabled={verifying || !trackReference.trim()}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-semibold text-sm disabled:opacity-50"
-                      >
-                        {verifying ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Verifying...
-                          </>
-                        ) : (
-                          'Track Payment'
-                        )}
-                      </button>
-                    </form>
                   </div>
                 )}
               </div>

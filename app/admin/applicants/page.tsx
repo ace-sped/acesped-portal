@@ -5,6 +5,7 @@ import AdminLayout from '../components/AdminLayout';
 import ExportApplicationsMenu from '../../components/applicants/ExportApplicationsMenu';
 import LoadErrorModal from '@/app/components/LoadErrorModal';
 import { getFriendlyErrorMessage } from '@/lib/friendly-error';
+import { hasPaidApplicationFee, isNigerianApplicant } from '@/lib/application-fee';
 import {
   ClipboardList,
   Search,
@@ -160,11 +161,13 @@ export default function ApplicantsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [selectedApplication, setSelectedApplication] = useState<Applicant | null>(null);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentReferenceDraft, setPaymentReferenceDraft] = useState('');
+  const [savingPaymentReference, setSavingPaymentReference] = useState(false);
+  const [paymentReferenceMessage, setPaymentReferenceMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchApplications();
@@ -227,64 +230,75 @@ export default function ApplicantsPage() {
     setFilteredApplications(filtered);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'REJECTED':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'UNDER_REVIEW':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'AWAITING_PAYMENT':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
-    }
-  };
-
   const openDetailModal = (application: Applicant) => {
     setSelectedApplication(application);
+    setPaymentReferenceDraft(application.paymentReference || '');
+    setPaymentReferenceMessage(null);
     setShowDetailModal(true);
   };
 
-  const handleStatusChange = async (newStatus: Applicant['status']) => {
+  const handleSavePaymentReference = async () => {
     if (!selectedApplication) return;
 
     try {
-      setUpdatingStatus(true);
+      setSavingPaymentReference(true);
+      setPaymentReferenceMessage(null);
+      const nextReference = paymentReferenceDraft.trim();
+
       const response = await fetch('/api/admin/applicants', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: selectedApplication.id,
-          status: newStatus,
+          paymentReference: nextReference,
         }),
       });
 
       const data = await response.json();
       if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to update status');
+        throw new Error(data.message || 'Failed to update payment reference');
       }
+
+      const updatedReference =
+        typeof data.application?.paymentReference === 'string'
+          ? data.application.paymentReference
+          : nextReference;
+      const updatedMethod =
+        typeof data.application?.paymentMethod === 'string'
+          ? data.application.paymentMethod
+          : selectedApplication.paymentMethod;
 
       setApplications((prev) =>
         prev.map((app) =>
-          app.id === selectedApplication.id ? { ...app, status: newStatus } : app
+          app.id === selectedApplication.id
+            ? {
+                ...app,
+                paymentReference: updatedReference,
+                paymentMethod: updatedMethod,
+              }
+            : app
         )
       );
       setSelectedApplication((prev) =>
-        prev ? { ...prev, status: newStatus } : prev
+        prev
+          ? {
+              ...prev,
+              paymentReference: updatedReference,
+              paymentMethod: updatedMethod,
+            }
+          : prev
       );
+      setPaymentReferenceDraft(updatedReference);
+      setPaymentReferenceMessage('Payment reference saved.');
     } catch (err) {
-      console.error('Error updating status:', err);
-      alert(
+      console.error('Error updating payment reference:', err);
+      setPaymentReferenceMessage(
         err instanceof Error
           ? err.message
-          : 'Failed to update status. Please try again.'
+          : 'Failed to update payment reference. Please try again.'
       );
     } finally {
-      setUpdatingStatus(false);
+      setSavingPaymentReference(false);
     }
   };
 
@@ -471,11 +485,12 @@ export default function ApplicantsPage() {
                         <div className="font-medium text-gray-900 dark:text-white truncate" title={`${application.firstname || ''} ${application.surname || ''}`.trim()}>
                           {application.firstname || ''} {application.surname || ''}
                         </div>
-                        {application.gender ? (
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {application.gender}
-                          </div>
-                        ) : null}
+                        <div
+                          className="text-sm text-gray-500 dark:text-gray-400 truncate"
+                          title={application.email || ''}
+                        >
+                          {application.email || '—'}
+                        </div>
                       </td>
                       <td className="py-3 px-4 align-top max-w-[280px]">
                         <div
@@ -544,16 +559,6 @@ export default function ApplicantsPage() {
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       Submitted {formatDate(selectedApplication.createdAt)}
-                    </span>
-                    <span className="hidden sm:inline text-gray-300 dark:text-gray-600">
-                      •
-                    </span>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                        selectedApplication.status
-                      )}`}
-                    >
-                      {selectedApplication.status.replace('_', ' ')}
                     </span>
                   </div>
                 </div>
@@ -733,11 +738,50 @@ export default function ApplicantsPage() {
                     Payment & Status
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <DetailField
-                      label="Payment Reference"
-                      value={selectedApplication.paymentReference}
-                      mono
-                    />
+                    <div className="md:col-span-2">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5 block">
+                        Payment Reference
+                      </label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={paymentReferenceDraft}
+                          onChange={(e) => {
+                            setPaymentReferenceDraft(e.target.value);
+                            setPaymentReferenceMessage(null);
+                          }}
+                          placeholder="Enter Paystack payment reference"
+                          className="flex-1 min-w-0 px-3 py-2 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSavePaymentReference}
+                          disabled={
+                            savingPaymentReference ||
+                            paymentReferenceDraft.trim() ===
+                              (selectedApplication.paymentReference || '').trim()
+                          }
+                          className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                        >
+                          {savingPaymentReference ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
+                      {paymentReferenceMessage ? (
+                        <p
+                          className={`text-xs mt-1.5 ${
+                            paymentReferenceMessage.includes('saved')
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}
+                        >
+                          {paymentReferenceMessage}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-gray-500 mt-1.5">
+                          Editing this marks the application fee as paid when a valid reference is saved.
+                        </p>
+                      )}
+                    </div>
                     <DetailField label="Payment Method" value={selectedApplication.paymentMethod} />
                     <DetailField
                       label="Acceptance Fee Paid"
@@ -758,31 +802,30 @@ export default function ApplicantsPage() {
                     />
                     <div>
                       <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 block">
-                        Status
+                        Application Fee Status
                       </label>
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <select
-                          value={selectedApplication.status}
-                          onChange={(e) =>
-                            handleStatusChange(e.target.value as Applicant['status'])
-                          }
-                          disabled={updatingStatus}
-                          className="px-3 py-1.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                        >
-                          <option value="PENDING">Pending</option>
-                          <option value="UNDER_REVIEW">Under Review</option>
-                          <option value="APPROVED">Approved</option>
-                          <option value="REJECTED">Rejected</option>
-                          <option value="AWAITING_PAYMENT">Awaiting Payment</option>
-                        </select>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                            selectedApplication.status
-                          )}`}
-                        >
-                          {selectedApplication.status.replace('_', ' ')}
-                        </span>
-                      </div>
+                      {(() => {
+                        const feePaid =
+                          hasPaidApplicationFee(
+                            selectedApplication.paymentReference,
+                            selectedApplication.paymentProof
+                          ) ||
+                          !isNigerianApplicant(
+                            selectedApplication.nationality,
+                            selectedApplication.country
+                          );
+                        return (
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              feePaid
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                            }`}
+                          >
+                            {feePaid ? 'Paid' : 'Unpaid'}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <DetailField
                       label="Application Number"
