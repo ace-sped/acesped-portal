@@ -2807,6 +2807,20 @@ export default function ApplicationPage() {
           console.error('Error storing payment record:', storageError);
         }
 
+        // If an application was already submitted, link this payment to it (one payment only)
+        if (paymentRef && nextForm.email) {
+          void fetch('/api/applicant/payment/link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reference: paymentRef,
+              email: nextForm.email,
+            }),
+          }).catch((linkError) => {
+            console.error('Error linking payment to application:', linkError);
+          });
+        }
+
         window.history.replaceState({}, '', '/application');
         openAlertModal(
           'Payment Successful',

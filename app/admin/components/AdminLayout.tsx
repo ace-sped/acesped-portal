@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, Shield, Settings, FileText,
   Activity, Database, LogOut, Menu, X, ChevronDown,
-  Bell, Search, User, UserPlus, BookOpen, GraduationCap, Newspaper, UserCircle, ClipboardList, Share, Youtube, Key
+  Bell, Search, User, UserPlus, BookOpen, GraduationCap, Newspaper, UserCircle, ClipboardList, Share, Youtube, Key, Mail
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -102,6 +102,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Manage Youtube', href: '/admin/youtube', icon: Youtube },
     { name: 'Manage Team', href: '/admin/team', icon: UserCircle },
     { name: 'Manage Roles', href: '/admin/roles', icon: Shield },
+    { name: 'Manage Email Messages', href: '/admin/email-messages', icon: Mail },
     { name: 'Access Codes', href: '/admin/access-codes', icon: Key },
     { name: 'Activity Logs', href: '/admin/logs', icon: Activity },
     { name: 'System Settings', href: '/admin/settings', icon: Settings },
@@ -221,7 +222,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main Content */}
       <div
-        className={`transition-all duration-300 ${sidebarOpen && !isMobile ? 'ml-64' : 'ml-0'
+        className={`min-w-0 max-w-full overflow-x-hidden transition-all duration-300 ${sidebarOpen && !isMobile ? 'ml-64' : 'ml-0'
           }`}
       >
         {/* Top Bar */}
@@ -273,7 +274,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="min-h-screen px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 pb-12">
+        <main className="min-h-screen min-w-0 max-w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 pb-12">
           {children}
         </main>
       </div>

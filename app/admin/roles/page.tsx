@@ -24,6 +24,7 @@ const AVAILABLE_PERMISSIONS = [
     'Manage Youtube',
     'Manage Team',
     'Role Management',
+    'Manage Email Messages',
     'Activity Logs',
     'System Settings',
     'Reports',

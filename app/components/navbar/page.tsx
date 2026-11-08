@@ -128,6 +128,7 @@ export default function Navbar() {
     { name: 'MSc/PhD', href: '/application', onClick: () => router.push('/application') },
     { name: 'Certificate', href: '/skill-application', onClick: () => router.push('/skill-application') },
     { name: 'PGD', href: '/application', onClick: () => router.push('/application') },
+    { name: 'Applicant Login', href: '/applicant/login', onClick: () => router.push('/applicant/login') },
   ];
 
   return (
