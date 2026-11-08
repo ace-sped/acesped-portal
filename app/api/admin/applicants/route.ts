@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ApplicationStatus, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sendAdmissionApprovedEmail } from '@/lib/email';
 
@@ -81,15 +82,17 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    const validStatuses: ApplicationStatus[] = [
+      ApplicationStatus.PENDING,
+      ApplicationStatus.UNDER_REVIEW,
+      ApplicationStatus.APPROVED,
+      ApplicationStatus.REJECTED,
+      ApplicationStatus.AWAITING_PAYMENT,
+    ];
+    let nextStatusValue: ApplicationStatus | undefined;
+
     if (status) {
-      const validStatuses = [
-        'PENDING',
-        'UNDER_REVIEW',
-        'APPROVED',
-        'REJECTED',
-        'AWAITING_PAYMENT',
-      ];
-      if (!validStatuses.includes(status)) {
+      if (!validStatuses.includes(status as ApplicationStatus)) {
         return NextResponse.json(
           {
             success: false,
@@ -98,6 +101,7 @@ export async function PATCH(request: NextRequest) {
           { status: 400 }
         );
       }
+      nextStatusValue = status as ApplicationStatus;
     }
 
     // Fetch existing application to detect status change
@@ -113,10 +117,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     let applicationNumber = existing.applicationNumber;
-    const nextStatus = status || existing.status;
+    const nextStatus = nextStatusValue || existing.status;
 
     // Auto-generate application number if approving and it doesn't exist
-    if (status === 'APPROVED' && !applicationNumber) {
+    if (nextStatusValue === ApplicationStatus.APPROVED && !applicationNumber) {
       const year = new Date().getFullYear();
       const count = await prisma.application.count({
         where: {
@@ -136,15 +140,10 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    const data: {
-      status?: string;
-      applicationNumber?: string | null;
-      paymentReference?: string;
-      paymentMethod?: string;
-    } = {};
+    const data: Prisma.ApplicationUpdateInput = {};
 
-    if (status) {
-      data.status = status;
+    if (nextStatusValue) {
+      data.status = nextStatusValue;
       data.applicationNumber = applicationNumber;
     }
 
@@ -161,7 +160,11 @@ export async function PATCH(request: NextRequest) {
     });
 
     // If status changed from non-approved to APPROVED, send congratulatory email
-    if (existing.status !== 'APPROVED' && nextStatus === 'APPROVED' && status) {
+    if (
+      existing.status !== ApplicationStatus.APPROVED &&
+      nextStatus === ApplicationStatus.APPROVED &&
+      nextStatusValue
+    ) {
       try {
         console.log('Attemping to send admission approval email to:', updated.email);
         await sendAdmissionApprovedEmail({
