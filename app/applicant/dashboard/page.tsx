@@ -7,12 +7,14 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
+  Download,
   GraduationCap,
   Loader2,
   LogOut,
   RefreshCw,
   ShieldCheck,
 } from 'lucide-react';
+import jsPDF from 'jspdf';
 import { hasPaidApplicationFee } from '@/lib/application-fee';
 import { getFriendlyErrorMessage } from '@/lib/friendly-error';
 import {
@@ -52,6 +54,7 @@ export default function ApplicantDashboardPage() {
   const [application, setApplication] = useState<ApplicantApplication | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  const [downloadingReceipt, setDownloadingReceipt] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(
     null
   );
@@ -305,6 +308,156 @@ export default function ApplicantDashboardPage() {
     router.push('/applicant/login');
   };
 
+  const handleDownloadReceipt = async () => {
+    if (!application || !hasPaidFee || application.applicationFeeWaived || downloadingReceipt) {
+      return;
+    }
+
+    setDownloadingReceipt(true);
+
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'a4',
+      });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const marginX = 48;
+      const issuedOn = new Date().toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+      const applicantName = `${application.firstname} ${application.surname}`.trim();
+      const amount = `NGN ${application.applicationFeeAmount.toLocaleString()}`;
+      const reference = application.paymentReference || 'Recorded';
+
+      // Styled brand header
+      const headerHeight = 108;
+      doc.setFillColor(6, 78, 59); // deep green
+      doc.rect(0, 0, pageWidth, headerHeight, 'F');
+      doc.setFillColor(22, 163, 74); // accent strip
+      doc.rect(0, headerHeight - 6, pageWidth, 6, 'F');
+
+      const logoSize = 58;
+      const logoX = marginX;
+      const logoY = 24;
+
+      try {
+        const logoResponse = await fetch('/images/ace-logo.png');
+        if (logoResponse.ok) {
+          const logoBlob = await logoResponse.blob();
+          const logoDataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.onerror = () => reject(new Error('Failed to read logo'));
+            reader.readAsDataURL(logoBlob);
+          });
+
+          // White circular plate behind logo for contrast
+          doc.setFillColor(255, 255, 255);
+          doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 3, 'F');
+          doc.addImage(logoDataUrl, 'PNG', logoX, logoY, logoSize, logoSize);
+        }
+      } catch {
+        // Continue without logo if it fails to load
+      }
+
+      const textX = logoX + logoSize + 18;
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.text('ACE-SPED', textX, 42);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      const orgLines = doc.splitTextToSize(
+        'Africa Centre of Excellence for Sustainable Power & Energy Development',
+        pageWidth - textX - marginX
+      );
+      doc.text(orgLines, textX, 58);
+
+      doc.setFontSize(9);
+      doc.text('University of Nigeria, Nsukka', textX, 58 + orgLines.length * 12 + 4);
+
+      // Receipt title block
+      let y = headerHeight + 36;
+      doc.setTextColor(6, 78, 59);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(15);
+      doc.text('APPLICATION FEE PAYMENT RECEIPT', marginX, y);
+
+      y += 10;
+      doc.setDrawColor(22, 163, 74);
+      doc.setLineWidth(1.5);
+      doc.line(marginX, y, marginX + 280, y);
+
+      y += 22;
+      doc.setTextColor(55, 65, 81);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.text(`Date issued: ${issuedOn}`, marginX, y);
+
+      y += 28;
+      const rows: Array<[string, string]> = [
+        ['Applicant', applicantName],
+        ['Email', application.email],
+        ['Application Number', application.applicationNumber],
+        ['Program', application.programChoice],
+        ['Program Type', application.programType],
+        ['Admission Session', application.admissionSession],
+        ['Payment Reference', reference],
+        ['Payment Method', application.paymentMethod || 'Paystack'],
+        ['Amount Paid', amount],
+        ['Status', 'PAID'],
+      ];
+
+      rows.forEach(([label, value], index) => {
+        if (index % 2 === 0) {
+          doc.setFillColor(240, 253, 244);
+          doc.roundedRect(marginX - 8, y - 12, pageWidth - marginX * 2 + 16, 22, 3, 3, 'F');
+        }
+
+        doc.setTextColor(55, 65, 81);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.text(`${label}:`, marginX, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(17, 24, 39);
+        const lines = doc.splitTextToSize(value || '—', 320);
+        doc.text(lines, marginX + 160, y);
+        y += Math.max(22, lines.length * 14);
+      });
+
+      y += 16;
+      doc.setDrawColor(22, 163, 74);
+      doc.setLineWidth(1);
+      doc.line(marginX, y, pageWidth - marginX, y);
+
+      y += 24;
+      doc.setFontSize(10);
+      doc.setTextColor(75, 85, 99);
+      doc.text(
+        'This receipt confirms payment of the ACE-SPED postgraduate application fee.',
+        marginX,
+        y
+      );
+      y += 14;
+      doc.text('Keep this document for your records.', marginX, y);
+
+      const safeRef = reference.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 24) || 'paid';
+      doc.save(`ACE-SPED-Application-Fee-Receipt-${safeRef}.pdf`);
+    } catch (err) {
+      setMessage({
+        type: 'error',
+        text: getFriendlyErrorMessage(err, 'Unable to download receipt. Please try again.'),
+      });
+    } finally {
+      setDownloadingReceipt(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-950 via-emerald-900 to-green-800 flex items-center justify-center">
@@ -535,6 +688,24 @@ export default function ApplicantDashboardPage() {
                         </p>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleDownloadReceipt()}
+                      disabled={downloadingReceipt}
+                      className="mt-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-green-300 dark:border-green-700 bg-white dark:bg-green-950/40 text-green-800 dark:text-green-200 font-semibold hover:bg-green-50 dark:hover:bg-green-900/40 disabled:opacity-60 transition-colors"
+                    >
+                      {downloadingReceipt ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Preparing Receipt...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4" />
+                          Download Receipt
+                        </>
+                      )}
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-4">

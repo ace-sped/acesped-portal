@@ -27,7 +27,7 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
     id: 'application-received',
     name: 'Application Received',
     subject: 'Application Received - ACE-SPED',
-    fromDefault: 'ACE-SPED Admissions <onboarding@resend.dev>',
+    fromDefault: 'ACE-SPED Admissions <admissions@acespedunn.edu.ng>',
     trigger: 'Sent automatically when a postgraduate application is submitted successfully.',
     source: 'lib/email.ts → sendApplicationReceivedEmail',
     variables: [
@@ -45,8 +45,11 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
       'We have successfully received your application with the following details:',
       '- Program: {{programChoice}}',
       '- Session: {{admissionSession}}',
+      '- Application Number: {{applicationNumber}}',
       '',
       'Your application will now be reviewed by our admissions committee. You will be invited to the admission exercise via email once a date for the exercise has been determined.',
+      '',
+      'Please log in to the Applicant Portal to complete your application fee payment if required.',
       '',
       'Best regards,',
       'ACE-SPED Admissions Office',
@@ -56,7 +59,7 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
     id: 'admission-exercise-invite',
     name: 'Admission Exercise Invite',
     subject: 'Invitation to ACE-SPED Admission Exercise',
-    fromDefault: 'ACE-SPED Admissions <onboarding@resend.dev>',
+    fromDefault: 'ACE-SPED Admissions <admissions@acespedunn.edu.ng>',
     trigger:
       'Sent automatically when a deputy center leader invites an applicant to the admission exercise.',
     source: 'lib/email.ts → sendAdmissionExerciseInviteEmail',
@@ -90,7 +93,7 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
     id: 'admission-approved',
     name: 'Admission Approved / Offer',
     subject: 'ACE-SPED Admission Offer & Acceptance Fee Payment',
-    fromDefault: 'ACE-SPED Admissions <onboarding@resend.dev>',
+    fromDefault: 'ACE-SPED Admissions <admissions@acespedunn.edu.ng>',
     trigger:
       'Sent automatically when an application status is set to APPROVED (admin applicants or deputy admission exercise).',
     source: 'lib/email.ts → sendAdmissionApprovedEmail',
@@ -124,7 +127,7 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
     id: 'student-welcome',
     name: 'Student Welcome / Portal Login',
     subject: 'Welcome to ACE-SPED - Student Portal Login Details',
-    fromDefault: 'ACE-SPED Admissions <onboarding@resend.dev>',
+    fromDefault: 'ACE-SPED Admissions <admissions@acespedunn.edu.ng>',
     trigger:
       'Sent automatically when an approved applicant is migrated to a student account.',
     source: 'lib/email.ts → sendStudentWelcomeEmail',

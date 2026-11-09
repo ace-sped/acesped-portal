@@ -11,6 +11,39 @@ const getResend = () => {
   return new Resend(apiKey);
 };
 
+function getEmailFrom() {
+  return process.env.EMAIL_FROM || 'ACE-SPED Admissions <onboarding@resend.dev>';
+}
+
+/** Resend returns `{ data, error }` and does not throw on API failures. */
+async function sendResendEmail(params: {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+  logLabel: string;
+}) {
+  const resend = getResend();
+  if (!resend) {
+    throw new Error('RESEND_API_KEY is not set');
+  }
+
+  const { data, error } = await resend.emails.send({
+    from: params.from,
+    to: params.to,
+    subject: params.subject,
+    html: params.html,
+  });
+
+  if (error) {
+    console.error(`${params.logLabel} failed:`, error);
+    throw new Error(error.message || `Failed to send ${params.logLabel}`);
+  }
+
+  console.log(`${params.logLabel} sent:`, data);
+  return data;
+}
+
 interface AdmissionEmailParams {
   email: string;
   firstname: string;
@@ -21,10 +54,7 @@ interface AdmissionEmailParams {
 }
 
 export async function sendAdmissionApprovedEmail(params: AdmissionEmailParams) {
-  const resend = getResend();
-  if (!resend) return;
-
-  const from = process.env.EMAIL_FROM || 'ACE-SPED Admissions <onboarding@resend.dev>';
+  if (!getResend()) return;
 
   const subject = 'ACE-SPED Admission Offer & Acceptance Fee Payment';
   const greetingName = params.firstname || params.email;
@@ -63,13 +93,13 @@ export async function sendAdmissionApprovedEmail(params: AdmissionEmailParams) {
   const html = `<div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6;">${htmlContent}</div>`;
 
   try {
-    const data = await resend.emails.send({
-      from,
+    await sendResendEmail({
+      from: getEmailFrom(),
       to: params.email,
       subject,
       html,
+      logLabel: 'Admission approval email',
     });
-    console.log('Admission approval email sent:', data);
   } catch (error) {
     console.error('Failed to send admission approval email', error);
   }
@@ -85,10 +115,9 @@ interface ApplicationReceivedEmailParams {
 }
 
 export async function sendApplicationReceivedEmail(params: ApplicationReceivedEmailParams) {
-  const resend = getResend();
-  if (!resend) return;
-
-  const from = process.env.EMAIL_FROM || 'ACE-SPED Admissions <onboarding@resend.dev>';
+  if (!getResend()) {
+    throw new Error('RESEND_API_KEY is not set');
+  }
 
   const subject = 'Application Received - ACE-SPED';
   const greetingName = params.firstname || params.email;
@@ -101,8 +130,13 @@ export async function sendApplicationReceivedEmail(params: ApplicationReceivedEm
   lines.push('We have successfully received your application with the following details:');
   lines.push(`- Program: ${params.programChoice}`);
   lines.push(`- Session: ${params.admissionSession}`);
+  if (params.applicationNumber) {
+    lines.push(`- Application Number: ${params.applicationNumber}`);
+  }
   lines.push('');
   lines.push('Your application will now be reviewed by our admissions committee. You will be invited to the admission exercise via email once a date for the exercise has been determined.');
+  lines.push('');
+  lines.push('Please log in to the Applicant Portal to complete your application fee payment if required.');
   lines.push('');
   lines.push('Best regards,');
   lines.push('ACE-SPED Admissions Office');
@@ -112,17 +146,13 @@ export async function sendApplicationReceivedEmail(params: ApplicationReceivedEm
 
   const html = `<div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6;">${htmlContent}</div>`;
 
-  try {
-    const data = await resend.emails.send({
-      from,
-      to: params.email,
-      subject,
-      html,
-    });
-    console.log('Application received email sent:', data);
-  } catch (error) {
-    console.error('Failed to send application received email', error);
-  }
+  await sendResendEmail({
+    from: getEmailFrom(),
+    to: params.email,
+    subject,
+    html,
+    logLabel: 'Application received email',
+  });
 }
 
 export interface AdmissionExerciseInviteEmailParams {
@@ -146,10 +176,9 @@ function formatExerciseDate(d: Date): string {
 }
 
 export async function sendAdmissionExerciseInviteEmail(params: AdmissionExerciseInviteEmailParams) {
-  const resend = getResend();
-  if (!resend) return;
-
-  const from = process.env.EMAIL_FROM || 'ACE-SPED Admissions <onboarding@resend.dev>';
+  if (!getResend()) {
+    throw new Error('RESEND_API_KEY is not set');
+  }
 
   const subject = 'Invitation to ACE-SPED Admission Exercise';
   const greetingName = params.firstname || params.email;
@@ -179,18 +208,13 @@ export async function sendAdmissionExerciseInviteEmail(params: AdmissionExercise
 
   const html = `<div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6;">${htmlContent}</div>`;
 
-  try {
-    const data = await resend.emails.send({
-      from,
-      to: params.email,
-      subject,
-      html,
-    });
-    console.log('Admission exercise invite email sent:', data);
-  } catch (error) {
-    console.error('Failed to send admission exercise invite email', error);
-    throw error;
-  }
+  await sendResendEmail({
+    from: getEmailFrom(),
+    to: params.email,
+    subject,
+    html,
+    logLabel: 'Admission exercise invite email',
+  });
 }
 
 interface StudentWelcomeEmailParams {
@@ -204,10 +228,7 @@ interface StudentWelcomeEmailParams {
 }
 
 export async function sendStudentWelcomeEmail(params: StudentWelcomeEmailParams) {
-  const resend = getResend();
-  if (!resend) return;
-
-  const from = process.env.EMAIL_FROM || 'ACE-SPED Admissions <onboarding@resend.dev>';
+  if (!getResend()) return;
 
   const subject = 'Welcome to ACE-SPED - Student Portal Login Details';
   const greetingName = params.firstname || params.email;
@@ -224,7 +245,7 @@ export async function sendStudentWelcomeEmail(params: StudentWelcomeEmailParams)
   lines.push(`- <strong>Matric Number:</strong> ${params.matricNumber}`);
   if (params.registrationNumber) {
     lines.push(`- <strong>Registration Number:</strong> ${params.registrationNumber}`);
-  }  
+  }
   if (params.password) {
     lines.push(`- <strong>Temporal Password:</strong> ${params.password}`);
   }
@@ -243,13 +264,13 @@ export async function sendStudentWelcomeEmail(params: StudentWelcomeEmailParams)
   const html = `<div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6;">${htmlContent}</div>`;
 
   try {
-    const data = await resend.emails.send({
-      from,
+    await sendResendEmail({
+      from: getEmailFrom(),
       to: params.email,
       subject,
       html,
+      logLabel: 'Student welcome email',
     });
-    console.log('Student welcome email sent:', data);
   } catch (error) {
     console.error('Failed to send student welcome email', error);
   }
