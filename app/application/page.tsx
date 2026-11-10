@@ -462,6 +462,7 @@ export default function ApplicationPage() {
   const [duplicateCheckError, setDuplicateCheckError] = useState<string | null>(null);
   const loadedDraftEmailRef = useRef<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [submittedApplicationNumber, setSubmittedApplicationNumber] = useState<string | null>(null);
   const [alertModal, setAlertModal] = useState<{
     title: string;
     message: string;
@@ -934,6 +935,12 @@ export default function ApplicationPage() {
       });
 
       if (response.ok) {
+        const successData = await response.json().catch(() => null);
+        const applicationNumber =
+          typeof successData?.applicationNumber === 'string'
+            ? successData.applicationNumber
+            : null;
+        setSubmittedApplicationNumber(applicationNumber);
         clearApplicationDraft();
         try {
           localStorage.removeItem(PAYMENT_STORAGE_KEY);
@@ -2871,6 +2878,12 @@ export default function ApplicationPage() {
                 <span className="font-semibold text-gray-900 dark:text-white">{formData.email || 'your email address'}</span>.
               </p>
               <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-4 mb-6 text-left space-y-3 border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-gray-500 dark:text-gray-400 shrink-0">Application Number</span>
+                  <span className="font-mono font-semibold text-green-700 dark:text-green-300 break-all text-right">
+                    {submittedApplicationNumber || 'Pending'}
+                  </span>
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">Applicant</span>
                   <span className="font-semibold text-gray-900 dark:text-white">
