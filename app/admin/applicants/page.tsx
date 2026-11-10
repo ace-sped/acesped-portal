@@ -476,10 +476,20 @@ export default function ApplicantsPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredApplications.map((application) => (
+                  filteredApplications.map((application) => {
+                    const feePaid = hasPaidApplicationFee(
+                      application.paymentReference,
+                      application.paymentProof
+                    );
+
+                    return (
                     <tr
                       key={application.id}
-                      className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      className={`border-b border-gray-200 dark:border-gray-700 ${
+                        feePaid
+                          ? 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100/80 dark:hover:bg-green-900/30'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                      }`}
                     >
                       <td className="py-3 px-4 align-top max-w-[220px]">
                         <div className="font-medium text-gray-900 dark:text-white truncate" title={`${application.firstname || ''} ${application.surname || ''}`.trim()}>
@@ -530,7 +540,8 @@ export default function ApplicantsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
